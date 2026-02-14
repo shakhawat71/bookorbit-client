@@ -27,6 +27,7 @@ export default function EditBook() {
       description: "A powerful guide to building good habits.",
     };
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFormData(dummyBook);
   }, [id]);
 

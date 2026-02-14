@@ -218,7 +218,7 @@ export default function DashboardLayout() {
         {/* Sidebar */}
         <aside
           className={[
-            "bg-gradient-to-b from-[#8B5E3C] via-[#7A4F32] to-[#5B3A24]",
+            "bg-linear-to-b from-[#8B5E3C] via-[#7A4F32] to-[#5B3A24]",
             "shadow-2xl transition-all duration-300",
             isOpen ? "md:w-72" : "md:w-20",
             "md:static md:translate-x-0 md:min-h-screen",
