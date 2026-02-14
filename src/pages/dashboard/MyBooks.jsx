@@ -1,42 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import axiosSecure from "../../hooks/useAxiosSecure";
 
 export default function MyBooks() {
-  // Temporary dummy data (replace with API later)
-  const [books, setBooks] = useState([
-    {
-      _id: "1",
-      name: "Atomic Habits",
-      author: "James Clear",
-      image: "https://images-na.ssl-images-amazon.com/images/I/81wgcld4wxL.jpg",
-      price: 20,
-      status: "published",
-    },
-    {
-      _id: "2",
-      name: "Deep Work",
-      author: "Cal Newport",
-      image: "https://images-na.ssl-images-amazon.com/images/I/71QKQ9mwV7L.jpg",
-      price: 18,
-      status: "unpublished",
-    },
-  ]);
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const toggleStatus = (id) => {
-    setBooks((prev) =>
-      prev.map((book) =>
-        book._id === id
-          ? {
-              ...book,
-              status:
-                book.status === "published"
-                  ? "unpublished"
-                  : "published",
-            }
-          : book
-      )
-    );
-  };
+  // Fetch librarian's books
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const res = await axiosSecure.get("/books/mine");
+        setBooks(res.data);
+      // eslint-disable-next-line no-unused-vars
+      } catch (error) {
+        toast.error("Failed to load books");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  if (loading) {
+    return <p className="text-center mt-10">Loading books...</p>;
+  }
 
   return (
     <div className="bg-base-200 p-6 rounded-2xl shadow-lg">
@@ -80,8 +70,7 @@ export default function MyBooks() {
                   <td>${book.price}</td>
 
                   <td>
-                    <button
-                      onClick={() => toggleStatus(book._id)}
+                    <span
                       className={`px-3 py-1 rounded-full text-sm font-medium ${
                         book.status === "published"
                           ? "bg-green-100 text-green-700"
@@ -89,7 +78,7 @@ export default function MyBooks() {
                       }`}
                     >
                       {book.status}
-                    </button>
+                    </span>
                   </td>
 
                   <td>

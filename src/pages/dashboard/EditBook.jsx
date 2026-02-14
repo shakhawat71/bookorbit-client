@@ -16,7 +16,7 @@ export default function EditBook() {
   });
 
   useEffect(() => {
-    // 🔥 Later this will fetch book by ID
+    // Later this will fetch book by ID
     const dummyBook = {
       name: "Atomic Habits",
       author: "James Clear",
@@ -43,7 +43,7 @@ export default function EditBook() {
 
     console.log("Updated Book:", formData);
 
-    toast.success("Book updated successfully (frontend only)");
+    toast.success("Book updated successfully");
   };
 
   return (

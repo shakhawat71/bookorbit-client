@@ -21,8 +21,8 @@ export default function DashboardLayout() {
   const [isOpen, setIsOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // 🔥 TEMP ROLE (Replace with real backend role later)
-  const { role = "user" } = useContext(AuthContext);
+  // TEMP ROLE (Replace with real backend role later)
+  const { role = "Admin" } = useContext(AuthContext);
 
   useEffect(() => {
     const onResize = () => {

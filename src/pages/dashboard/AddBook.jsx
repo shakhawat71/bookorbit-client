@@ -1,5 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
+import axiosSecure from "../../hooks/useAxiosSecure"; 
+
 
 export default function AddBook() {
   const [loading, setLoading] = useState(false);
@@ -21,14 +23,15 @@ export default function AddBook() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      console.log("Book Data:", formData);
+    const response = await axiosSecure.post("/books", formData);
 
-      toast.success("Book added successfully (frontend only)");
+    if (response.data.insertedId) {
+      toast.success("Book added successfully!");
 
       setFormData({
         name: "",
@@ -38,13 +41,15 @@ export default function AddBook() {
         status: "unpublished",
         description: "",
       });
-    // eslint-disable-next-line no-unused-vars
-    } catch (error) {
-      toast.error("Failed to add book");
-    } finally {
-      setLoading(false);
     }
-  };
+  // eslint-disable-next-line no-unused-vars
+  } catch (error) {
+    toast.error("Failed to add book");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="max-w-4xl mx-auto bg-base-200 shadow-xl rounded-2xl p-8">
