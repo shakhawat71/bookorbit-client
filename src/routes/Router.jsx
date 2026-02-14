@@ -11,6 +11,8 @@ import PrivateRoute from "./PrivateRoute";
 import MyProfile from "../pages/dashboard/MyProfile";
 import Invoices from "../pages/dashboard/Invoices";
 import Wishlist from "../pages/dashboard/Wishlist";
+import EditBook from "../pages/dashboard/EditBook";
+
 
 
 const router = createBrowserRouter([
@@ -48,7 +50,11 @@ const router = createBrowserRouter([
           {
             path: "wishlist",
             element:<Wishlist></Wishlist>
-          }
+          },
+          {
+            path: "edit-book/:id",
+            element: <EditBook />,
+          },
         ],
       },
     ],
