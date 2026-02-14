@@ -12,6 +12,8 @@ import MyProfile from "../pages/dashboard/MyProfile";
 import Invoices from "../pages/dashboard/Invoices";
 import Wishlist from "../pages/dashboard/Wishlist";
 import EditBook from "../pages/dashboard/EditBook";
+import AllUsers from "../pages/dashboard/AllUsers";
+
 
 
 
@@ -55,6 +57,11 @@ const router = createBrowserRouter([
             path: "edit-book/:id",
             element: <EditBook />,
           },
+          {
+            path: "all-users",
+            element: <AllUsers />,
+          },
+
         ],
       },
     ],
