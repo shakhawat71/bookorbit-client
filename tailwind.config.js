@@ -5,8 +5,6 @@ export default {
     extend: {
       colors: {
         navbar: "#f4f4f4",
-        primaryBrown: "#8B5E3C",
-        brownHover: "#A47148",
       },
     },
   },
