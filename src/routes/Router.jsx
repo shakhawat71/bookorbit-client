@@ -13,6 +13,8 @@ import Invoices from "../pages/dashboard/Invoices";
 import Wishlist from "../pages/dashboard/Wishlist";
 import EditBook from "../pages/dashboard/EditBook";
 import AllUsers from "../pages/dashboard/AllUsers";
+import ManageBooks from "../pages/dashboard/ManageBooks";
+
 
 
 
@@ -61,7 +63,10 @@ const router = createBrowserRouter([
             path: "all-users",
             element: <AllUsers />,
           },
-
+          {
+            path: "manage-books",
+            element: <ManageBooks />,
+          },
         ],
       },
     ],
