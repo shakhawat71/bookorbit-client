@@ -2,12 +2,12 @@ import { Link } from "react-router-dom";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#f4f4f4] text-gray-800 border-t border-gray-200">
+    <footer className="bg-[#8B5E3C] text-white border-t border-gray-200">
       <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-10">
         {/* Brand */}
         <div>
           <h3 className="text-xl font-bold text-primaryBrown">BookOrbit</h3>
-          <p className="mt-3 text-sm leading-relaxed text-gray-600">
+          <p className="mt-3 text-sm leading-relaxed text-white-">
             Library-to-home book delivery made simple for students, researchers, and readers.
           </p>
         </div>
@@ -27,16 +27,16 @@ export default function Footer() {
         {/* Contact + Social */}
         <div>
           <h4 className="font-semibold text-primaryBrown mb-3">Contact</h4>
-          <ul className="space-y-2 text-sm text-gray-600">
-            <li>Email: <span className="text-gray-800">support@bookorbit.com</span></li>
-            <li>Phone: <span className="text-gray-800">+880 1XXX-XXXXXX</span></li>
-            <li>Address: <span className="text-gray-800">Dhaka, Bangladesh</span></li>
+          <ul className="space-y-2 text-sm text-white">
+            <li>Email: <span>support@bookorbit.com</span></li>
+            <li>Phone: <span>+880 1XXX-XXXXXX</span></li>
+            <li>Address: <span>Dhaka, Bangladesh</span></li>
           </ul>
 
           <div className="mt-5 flex items-center gap-3">
             {/* Facebook */}
             <a
-              className="btn btn-sm bg-white border border-primaryBrown text-primaryBrown hover:bg-primaryBrown hover:text-white"
+              className="btn btn-sm border border-primaryBrown text-primaryBrown hover:bg-primaryBrown hover:text-white"
               href="#"
               aria-label="Facebook"
             >
@@ -45,7 +45,7 @@ export default function Footer() {
 
             {/* Instagram */}
             <a
-              className="btn btn-sm bg-white border border-primaryBrown text-primaryBrown hover:bg-primaryBrown hover:text-white"
+              className="btn btn-sm border border-primaryBrown text-primaryBrown hover:bg-primaryBrown hover:text-white"
               href="#"
               aria-label="Instagram"
             >
@@ -54,7 +54,7 @@ export default function Footer() {
 
             {/* X (new logo) */}
             <a
-              className="btn btn-sm bg-white border border-primaryBrown text-primaryBrown hover:bg-primaryBrown hover:text-white"
+              className="btn btn-sm border border-primaryBrown text-primaryBrown hover:bg-primaryBrown hover:text-white"
               href="#"
               aria-label="X"
               title="X"
@@ -74,9 +74,8 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-gray-200">
-        <div className="max-w-6xl mx-auto px-6 py-4 text-sm text-gray-600 flex flex-col md:flex-row items-center justify-between gap-2">
+        <div className="max-w-6xl mx-auto px-6 py-4 text-sm text-white flex flex-col items-center justify-between">
           <p>© {new Date().getFullYear()} BookOrbit. All rights reserved.</p>
-          <p className="text-gray-500">Built with MERN • UI: Tailwind + daisyUI</p>
         </div>
       </div>
     </footer>
