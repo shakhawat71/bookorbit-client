@@ -21,8 +21,8 @@ export default function DashboardLayout() {
   const [isOpen, setIsOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // TEMP ROLE (Replace with real backend role later)
-  const { role = "admin" } = useContext(AuthContext);
+  //  Dynamic role from backend
+  const { role, loading } = useContext(AuthContext);
 
   useEffect(() => {
     const onResize = () => {
@@ -31,6 +31,14 @@ export default function DashboardLayout() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="loading loading-spinner text-[#8B5E3C]"></span>
+      </div>
+    );
+  }
 
   const closeMobile = () => {
     setMobileOpen(false);
@@ -42,14 +50,14 @@ export default function DashboardLayout() {
       "group relative flex items-center gap-3 rounded-xl px-4 py-2.5",
       "transition-all duration-200 ease-out",
       isActive
-        ? "bg-white/10 text-white shadow-lg"
+        ? "bg-white/15 text-white shadow-lg"
         : "text-white/80 hover:text-white hover:bg-white/10",
     ].join(" ");
 
   const ActiveIndicator = ({ isActive }) => (
     <span
       className={`absolute left-1 top-1/2 -translate-y-1/2 h-8 w-1 rounded-full transition-all ${
-        isActive ? "bg-white" : "bg-transparent"
+        isActive ? "bg-white" : "bg-transparent group-hover:bg-white/40"
       }`}
     />
   );
@@ -62,11 +70,12 @@ export default function DashboardLayout() {
           <span className="p-2 rounded-lg bg-white/10">
             {icon}
           </span>
+
           <span
-            className={`transition-all duration-300 ${
+            className={`transition-all duration-300 whitespace-nowrap ${
               isOpen
-                ? "opacity-100"
-                : "opacity-0 w-0 overflow-hidden"
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 -translate-x-2 w-0 overflow-hidden"
             }`}
           >
             {label}
@@ -81,20 +90,22 @@ export default function DashboardLayout() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <span className="grid place-items-center h-10 w-10 rounded-xl bg-white/10">
+          <span className="grid place-items-center h-10 w-10 rounded-xl bg-white/10 shadow-inner">
             <LayoutDashboard className="text-white" size={18} />
           </span>
 
-          {isOpen && (
-            <div>
-              <h2 className="font-bold text-white text-lg">
-                Dashboard
-              </h2>
-              <p className="text-xs text-white/70">
-                BookOrbit Panel
-              </p>
-            </div>
-          )}
+          <div
+            className={`transition-all duration-300 ${
+              isOpen ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+            }`}
+          >
+            <h2 className="font-bold text-white text-lg">
+              Dashboard
+            </h2>
+            <p className="text-xs text-white/70">
+              BookOrbit Panel
+            </p>
+          </div>
         </div>
 
         <button

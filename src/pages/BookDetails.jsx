@@ -22,6 +22,7 @@ export default function BookDetails() {
       await axiosSecure.post("/orders", orderData);
 
       toast.success("Order placed successfully 🎉");
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error("Failed to place order");
     }

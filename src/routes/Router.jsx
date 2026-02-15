@@ -1,14 +1,14 @@
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
+import RoleProtectedRoute from "./RoleProtectedRoute";
+import PrivateRoute from "./PrivateRoute";
 
 import Home from "../pages/Home";
 import AllBooks from "../pages/AllBooks";
 import BookDetails from "../pages/BookDetails";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
-
-import PrivateRoute from "./PrivateRoute";
 
 // Dashboard Pages
 import MyOrders from "../pages/dashboard/MyOrders";
@@ -47,13 +47,48 @@ const router = createBrowserRouter([
           { path: "wishlist", element: <Wishlist /> },
 
           // 📚 LIBRARIAN ROUTES
-          { path: "add-book", element: <AddBook /> },
-          { path: "my-books", element: <MyBooks /> },
-          { path: "edit-book/:id", element: <EditBook /> },
+          {
+            path: "add-book",
+            element: (
+              <RoleProtectedRoute allowedRoles={["librarian", "admin"]}>
+                <AddBook />
+              </RoleProtectedRoute>
+            ),
+          },
+          {
+            path: "my-books",
+            element: (
+              <RoleProtectedRoute allowedRoles={["librarian", "admin"]}>
+                <MyBooks />
+              </RoleProtectedRoute>
+            ),
+          },
+          {
+            path: "edit-book/:id",
+            element: (
+              <RoleProtectedRoute allowedRoles={["librarian", "admin"]}>
+                <EditBook />
+              </RoleProtectedRoute>
+            ),
+          },
 
           // 🛠 ADMIN ROUTES
-          { path: "all-users", element: <AllUsers /> },
-          { path: "manage-books", element: <ManageBooks /> },
+          {
+            path: "all-users",
+            element: (
+              <RoleProtectedRoute allowedRoles={["admin"]}>
+                <AllUsers />
+              </RoleProtectedRoute>
+            ),
+          },
+          {
+            path: "manage-books",
+            element: (
+              <RoleProtectedRoute allowedRoles={["admin"]}>
+                <ManageBooks />
+              </RoleProtectedRoute>
+            ),
+          },
         ],
       },
     ],
