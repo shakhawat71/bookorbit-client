@@ -70,7 +70,7 @@ export default function Register() {
       await updateUserProfile(name, photoURL);
 
       // ✅ Save user in MongoDB
-      await axios.put("http://localhost:5000/users", {
+      await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
         name,
         email,
         photoURL,
@@ -101,7 +101,7 @@ export default function Register() {
       const result = await googleLogin();
       const user = result.user;
 
-      await axios.put("http://localhost:5000/users", {
+      await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
         name: user.displayName || "",
         email: user.email,
         photoURL: user.photoURL || "",

@@ -31,7 +31,7 @@ export default function Login() {
       const user = result.user;
 
       // ✅ Save user in MongoDB
-      await axios.put("http://localhost:5000/users", {
+      await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
         name: user.displayName || "",
         email: user.email,
         photoURL: user.photoURL || "",
@@ -56,7 +56,7 @@ export default function Login() {
       const user = result.user;
 
       // ✅ Save user in MongoDB
-      await axios.put("http://localhost:5000/users", {
+      await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
         name: user.displayName || "",
         email: user.email,
         photoURL: user.photoURL || "",

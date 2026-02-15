@@ -69,7 +69,7 @@ export default function AuthProvider({ children }) {
         // ✅ Fetch role from backend
         try {
           const res = await axios.get(
-            "http://localhost:5000/users/role",
+            `${import.meta.env.VITE_API_URL}/users/role`,
             {
               headers: {
                 authorization: `Bearer ${token}`,

@@ -1,63 +1,64 @@
-import { useParams } from "react-router-dom";
-import { useState } from "react";
-import axiosSecure from "../hooks/useAxiosSecure";
-import toast from "react-hot-toast";
+// src/pages/BookDetails.jsx
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 
 export default function BookDetails() {
   const { id } = useParams();
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const navigate = useNavigate();
 
-  const handleOrder = async (e) => {
-    e.preventDefault();
+  const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    try {
-      const orderData = {
-        bookId: id,
-        bookTitle: "Sample Book", // replace later with real book data
-        phone,
-        address,
-      };
+  useEffect(() => {
+    const fetchBook = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/books/${id}`);
+        setBook(res.data);
+      } catch (err) {
+        console.error(err);
+        setBook(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      await axiosSecure.post("/orders", orderData);
+    fetchBook();
+  }, [id]);
 
-      toast.success("Order placed successfully 🎉");
-    // eslint-disable-next-line no-unused-vars
-    } catch (error) {
-      toast.error("Failed to place order");
-    }
-  };
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (!book) return <div className="p-6">Book not found.</div>;
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Book Details</h1>
-
-      <form onSubmit={handleOrder} className="space-y-4">
-        <input
-          type="text"
-          placeholder="Phone Number"
-          required
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="w-full border p-2 rounded"
+    <div className="max-w-5xl mx-auto p-6">
+      <div className="grid md:grid-cols-2 gap-8">
+        <img
+          src={book.image}
+          alt={book.name}
+          className="w-full rounded-xl border"
         />
 
-        <input
-          type="text"
-          placeholder="Address"
-          required
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          className="w-full border p-2 rounded"
-        />
+        <div>
+          <h1 className="text-3xl font-bold text-[#8B5E3C]">{book.name}</h1>
+          <p className="mt-2 text-gray-600">Author: {book.author}</p>
 
-        <button
-          type="submit"
-          className="bg-[#8B5E3C] text-white px-4 py-2 rounded"
-        >
-          Order Book
-        </button>
-      </form>
+          <p className="mt-4 text-gray-700 whitespace-pre-line">
+            {book.description}
+          </p>
+
+          <p className="mt-6 text-xl font-semibold">
+            Price: <span className="text-[#8B5E3C]">{book.price}</span>
+          </p>
+
+          <button
+            onClick={() => navigate(`/books/${book._id}/buy`)}
+            className="mt-6 w-full md:w-auto px-6 py-2 rounded-md bg-[#8B5E3C] text-white hover:bg-[#A47148] transition"
+          >
+            Buy Now
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

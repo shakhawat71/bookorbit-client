@@ -8,7 +8,7 @@ export default function AllBooks() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/books?status=published")
+      .get(`${import.meta.env.VITE_API_URL}/books?status=published`,)
       .then((res) => {
         setBooks(res.data);
         setLoading(false);

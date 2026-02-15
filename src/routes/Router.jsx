@@ -1,14 +1,18 @@
 import { createBrowserRouter } from "react-router-dom";
+
 import MainLayout from "../layouts/MainLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
-import RoleProtectedRoute from "./RoleProtectedRoute";
-import PrivateRoute from "./PrivateRoute";
 
+import PrivateRoute from "./PrivateRoute";
+import RoleProtectedRoute from "./RoleProtectedRoute";
+
+// Public Pages
 import Home from "../pages/Home";
 import AllBooks from "../pages/AllBooks";
 import BookDetails from "../pages/BookDetails";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import BuyBook from "../pages/BuyBook";
 
 // Dashboard Pages
 import MyOrders from "../pages/dashboard/MyOrders";
@@ -26,14 +30,31 @@ const router = createBrowserRouter([
     path: "/",
     element: <MainLayout />,
     children: [
+      // ===============================
+      // Public Routes
+      // ===============================
       { path: "/", element: <Home /> },
       { path: "/books", element: <AllBooks /> },
       { path: "/books/:id", element: <BookDetails /> },
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
 
+      // ✅ Buy page (must login first)
       {
-        path: "dashboard",
+        path: "/books/:id/buy",
+        element: (
+          <PrivateRoute>
+            <BuyBook />
+          </PrivateRoute>
+        ),
+      },
+
+      { path: "/login", element: <Login /> },
+      { path: "/register", element: <Register /> },
+
+      // ===============================
+      // Dashboard (Protected)
+      // ===============================
+      {
+        path: "/dashboard",
         element: (
           <PrivateRoute>
             <DashboardLayout />
