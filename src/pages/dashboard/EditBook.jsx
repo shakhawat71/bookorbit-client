@@ -1,131 +1,134 @@
-import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import axiosSecure from "../../hooks/useAxiosSecure";
 
 export default function EditBook() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  // Temporary dummy book data (replace with API later)
-  const [formData, setFormData] = useState({
-    name: "",
-    author: "",
-    image: "",
-    price: "",
-    status: "unpublished",
-    description: "",
-  });
+  const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(false);
 
+  // ✅ Load book
   useEffect(() => {
-    // Later this will fetch book by ID
-    const dummyBook = {
-      name: "Atomic Habits",
-      author: "James Clear",
-      image:
-        "https://images-na.ssl-images-amazon.com/images/I/81wgcld4wxL.jpg",
-      price: 20,
-      status: "published",
-      description: "A powerful guide to building good habits.",
+    const loadBook = async () => {
+      try {
+        const res = await axiosSecure.get("/books");
+        const found = res.data.find((b) => b._id === id);
+        setBook(found);
+      // eslint-disable-next-line no-unused-vars
+      } catch (error) {
+        toast.error("Failed to load book");
+      }
     };
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFormData(dummyBook);
+    loadBook();
   }, [id]);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = (e) => {
+  // ✅ Update book
+  const handleUpdate = async (e) => {
     e.preventDefault();
 
-    console.log("Updated Book:", formData);
+    const form = e.target;
 
-    toast.success("Book updated successfully");
+    const updatedBook = {
+      name: form.name.value,
+      author: form.author.value,
+      price: form.price.value,
+      status: form.status.value,
+      description: form.description.value,
+    };
+
+    try {
+      setLoading(true);
+
+      await axiosSecure.patch(`/books/${id}`, updatedBook);
+
+      toast.success("Book updated successfully ✅");
+      navigate("/dashboard/my-books");
+    // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      toast.error("Update failed ❌");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto bg-base-200 shadow-xl rounded-2xl p-8">
-      <h1 className="text-2xl font-bold text-[#8B5E3C] mb-6">
-        Edit Book
-      </h1>
+  // ✅ Delete book
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this book?"
+    );
 
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        {/* Book Name */}
+    if (!confirmDelete) return;
+
+    try {
+      setLoading(true);
+
+      await axiosSecure.delete(`/books/${id}`);
+
+      toast.success("Book deleted successfully 🗑️");
+
+      navigate("/dashboard/my-books");
+    // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      toast.error("Delete failed ❌");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!book) return <p className="text-center mt-10">Loading...</p>;
+
+  return (
+    <div className="max-w-xl mx-auto bg-base-200 p-6 rounded-xl shadow">
+      <h2 className="text-2xl font-bold text-[#8B5E3C] mb-5">
+        Edit Book
+      </h2>
+
+      <form onSubmit={handleUpdate} className="space-y-4">
+        {/* Name */}
         <div>
-          <label className="block mb-2 font-medium text-[#8B5E3C]">
-            Book Name
-          </label>
+          <label className="block font-medium mb-1">Book Name</label>
           <input
-            type="text"
+            defaultValue={book.name}
             name="name"
-            value={formData.name}
-            onChange={handleChange}
             required
-            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#8B5E3C]"
+            className="input input-bordered w-full"
           />
         </div>
 
         {/* Author */}
         <div>
-          <label className="block mb-2 font-medium text-[#8B5E3C]">
-            Author
-          </label>
+          <label className="block font-medium mb-1">Author</label>
           <input
-            type="text"
+            defaultValue={book.author}
             name="author"
-            value={formData.author}
-            onChange={handleChange}
             required
-            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#8B5E3C]"
-          />
-        </div>
-
-        {/* Image */}
-        <div>
-          <label className="block mb-2 font-medium text-[#8B5E3C]">
-            Image URL
-          </label>
-          <input
-            type="text"
-            name="image"
-            value={formData.image}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#8B5E3C]"
+            className="input input-bordered w-full"
           />
         </div>
 
         {/* Price */}
         <div>
-          <label className="block mb-2 font-medium text-[#8B5E3C]">
-            Price
-          </label>
+          <label className="block font-medium mb-1">Price</label>
           <input
+            defaultValue={book.price}
             type="number"
             name="price"
-            value={formData.price}
-            onChange={handleChange}
             required
-            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#8B5E3C]"
+            className="input input-bordered w-full"
           />
         </div>
 
         {/* Status */}
         <div>
-          <label className="block mb-2 font-medium text-[#8B5E3C]">
-            Status
-          </label>
+          <label className="block font-medium mb-1">Status</label>
           <select
+            defaultValue={book.status}
             name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#8B5E3C]"
+            className="select select-bordered w-full"
           >
             <option value="published">Published</option>
             <option value="unpublished">Unpublished</option>
@@ -133,26 +136,33 @@ export default function EditBook() {
         </div>
 
         {/* Description */}
-        <div className="md:col-span-2">
-          <label className="block mb-2 font-medium text-[#8B5E3C]">
-            Description
-          </label>
+        <div>
+          <label className="block font-medium mb-1">Description</label>
           <textarea
+            defaultValue={book.description}
             name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows="4"
-            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#8B5E3C]"
+            className="textarea textarea-bordered w-full"
+            rows={4}
           />
         </div>
 
-        {/* Submit */}
-        <div className="md:col-span-2">
+        {/* Buttons */}
+        <div className="flex gap-3">
           <button
             type="submit"
-            className="w-full bg-[#8B5E3C] text-white py-3 rounded-lg hover:bg-[#A47148]"
+            disabled={loading}
+            className="btn bg-[#8B5E3C] text-white hover:bg-[#A47148] flex-1"
           >
-            Save Changes
+            {loading ? "Updating..." : "Update Book"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={loading}
+            className="btn bg-red-600 text-white hover:bg-red-700"
+          >
+            Delete
           </button>
         </div>
       </form>

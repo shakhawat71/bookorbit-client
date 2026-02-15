@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AuthContext } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 export default function Login() {
   const { loginUser, googleLogin } = useContext(AuthContext);
@@ -13,12 +14,9 @@ export default function Login() {
 
   const navigate = useNavigate();
   const location = useLocation();
-
   const from = location.state?.from?.pathname || "/";
 
-  
-  // Email Login
-
+  // ✅ Email Login
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -28,9 +26,20 @@ export default function Login() {
 
     try {
       setLoading(true);
-      await loginUser(email, password);
+
+      const result = await loginUser(email, password);
+      const user = result.user;
+
+      // ✅ Save user in MongoDB
+      await axios.put("http://localhost:5000/users", {
+        name: user.displayName || "",
+        email: user.email,
+        photoURL: user.photoURL || "",
+      });
+
       toast.success("Login successful 🎉");
       navigate(from, { replace: true });
+
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -38,15 +47,24 @@ export default function Login() {
     }
   };
 
-  
-  // Google Login
-
+  // ✅ Google Login
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      await googleLogin();
+
+      const result = await googleLogin();
+      const user = result.user;
+
+      // ✅ Save user in MongoDB
+      await axios.put("http://localhost:5000/users", {
+        name: user.displayName || "",
+        email: user.email,
+        photoURL: user.photoURL || "",
+      });
+
       toast.success("Google login successful 🎉");
       navigate(from, { replace: true });
+
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -56,8 +74,6 @@ export default function Login() {
 
   return (
     <div className="relative min-h-screen bg-base-100 flex items-center justify-center px-4 overflow-hidden">
-
-    {/* Background Blobs  */}
 
       <motion.div
         animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
@@ -71,22 +87,18 @@ export default function Login() {
         className="absolute -bottom-30 -right-30 w-80 h-80 bg-[#A47148] opacity-10 rounded-full blur-3xl"
       />
 
-      {/* Login Card */}
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5 }}
         className="relative w-full max-w-md bg-base-200 shadow-xl rounded-xl p-8"
       >
-        {/* Title */}
         <h2 className="text-2xl font-bold text-center text-[#8B5E3C] mb-6">
           Login to BookOrbit
         </h2>
 
-        {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4">
 
-          {/* Email */}
           <div>
             <label className="block mb-1 font-medium text-[#8B5E3C]">
               Email
@@ -100,7 +112,6 @@ export default function Login() {
             />
           </div>
 
-          {/* Password */}
           <div className="relative">
             <label className="block mb-1 font-medium text-[#8B5E3C]">
               Password
@@ -114,7 +125,6 @@ export default function Login() {
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#8B5E3C]"
             />
 
-            {/* Eye Toggle */}
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -124,7 +134,6 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Login Button */}
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
@@ -136,14 +145,12 @@ export default function Login() {
           </motion.button>
         </form>
 
-        {/* Divider */}
         <div className="my-4 flex items-center">
           <div className="grow border-t"></div>
           <span className="mx-3 text-gray-500 text-sm">OR</span>
           <div className="grow border-t"></div>
         </div>
 
-        {/* Google Login */}
         <motion.button
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
@@ -154,7 +161,6 @@ export default function Login() {
           Continue with Google
         </motion.button>
 
-        {/* Register Link */}
         <p className="mt-6 text-center text-sm text-gray-600">
           Don’t have an account?{" "}
           <Link

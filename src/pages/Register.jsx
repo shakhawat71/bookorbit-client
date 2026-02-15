@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AuthContext } from "../contexts/AuthContext";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 export default function Register() {
   const { createUser, updateUserProfile, googleLogin } =
@@ -16,53 +17,29 @@ export default function Register() {
 
   const navigate = useNavigate();
 
- 
-  // Handle Image Selection
-  
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setImageFile(file);
-
-    if (file) {
-      setPreview(URL.createObjectURL(file));
-    }
+    if (file) setPreview(URL.createObjectURL(file));
   };
 
- 
-  // Upload Image to imgbb
-  
   const uploadImage = async () => {
     if (!imageFile) return null;
 
     const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
-
-    if (!apiKey) {
-      throw new Error("IMGBB API key not configured");
-    }
 
     const formData = new FormData();
     formData.append("image", imageFile);
 
     const response = await fetch(
       `https://api.imgbb.com/1/upload?key=${apiKey}`,
-      {
-        method: "POST",
-        body: formData,
-      }
+      { method: "POST", body: formData }
     );
 
     const data = await response.json();
-
-    if (!data.success) {
-      throw new Error("Image upload failed");
-    }
-
     return data.data.display_url;
   };
 
-  
-  // Handle Register
-  
   const handleRegister = async (e) => {
     e.preventDefault();
 
@@ -72,39 +49,10 @@ export default function Register() {
     const password = form.password.value;
     const confirmPassword = form.confirmPassword.value;
 
-    // Password validation
     if (password !== confirmPassword) {
       return Swal.fire({
         icon: "error",
-        title: "Oops...",
-        text: "Passwords do not match!",
-        confirmButtonColor: "#8B5E3C",
-      });
-    }
-
-    if (password.length < 6) {
-      return Swal.fire({
-        icon: "error",
-        title: "Weak Password",
-        text: "Password must be at least 6 characters.",
-        confirmButtonColor: "#8B5E3C",
-      });
-    }
-
-    if (!/[A-Z]/.test(password)) {
-      return Swal.fire({
-        icon: "error",
-        title: "Weak Password",
-        text: "Must contain one uppercase letter.",
-        confirmButtonColor: "#8B5E3C",
-      });
-    }
-
-    if (!/[!@#$%^&*]/.test(password)) {
-      return Swal.fire({
-        icon: "error",
-        title: "Weak Password",
-        text: "Must contain one special character.",
+        title: "Passwords do not match!",
         confirmButtonColor: "#8B5E3C",
       });
     }
@@ -112,24 +60,27 @@ export default function Register() {
     try {
       setLoading(true);
 
-      await createUser(email, password);
+      const result = await createUser(email, password);
+      // eslint-disable-next-line no-unused-vars
+      const user = result.user;
 
       let photoURL = null;
-
-      if (imageFile) {
-        photoURL = await uploadImage();
-      }
+      if (imageFile) photoURL = await uploadImage();
 
       await updateUserProfile(name, photoURL);
+
+      // ✅ Save user in MongoDB
+      await axios.put("http://localhost:5000/users", {
+        name,
+        email,
+        photoURL,
+      });
 
       Swal.fire({
         icon: "success",
         title: "Account Created",
-        text: "Welcome to BookOrbit",
         confirmButtonColor: "#8B5E3C",
-      }).then(() => {
-        navigate("/");
-      });
+      }).then(() => navigate("/"));
 
     } catch (error) {
       Swal.fire({
@@ -143,13 +94,18 @@ export default function Register() {
     }
   };
 
-  // Google Register
-  
   const handleGoogleRegister = async () => {
     try {
       setLoading(true);
 
-      await googleLogin();
+      const result = await googleLogin();
+      const user = result.user;
+
+      await axios.put("http://localhost:5000/users", {
+        name: user.displayName || "",
+        email: user.email,
+        photoURL: user.photoURL || "",
+      });
 
       Swal.fire({
         icon: "success",
@@ -182,7 +138,6 @@ export default function Register() {
 
         <form onSubmit={handleRegister} className="space-y-4">
 
-          {/* Centered Image Preview */}
           <div className="flex flex-col items-center">
             {preview && (
               <motion.img
@@ -206,7 +161,6 @@ export default function Register() {
             />
           </div>
 
-          {/* Name */}
           <input
             type="text"
             name="name"
@@ -215,7 +169,6 @@ export default function Register() {
             className="w-full px-4 py-2 text-[#8B5E3C] border rounded-md focus:ring-2 focus:ring-[#8B5E3C]"
           />
 
-          {/* Email */}
           <input
             type="email"
             name="email"
@@ -224,7 +177,6 @@ export default function Register() {
             className="w-full px-4 py-2 text-[#8B5E3C] border rounded-md focus:ring-2 focus:ring-[#8B5E3C]"
           />
 
-          {/* Password */}
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -233,7 +185,6 @@ export default function Register() {
               required
               className="w-full px-4 py-2 text-[#8B5E3C] border rounded-md focus:ring-2 focus:ring-[#8B5E3C]"
             />
-
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -243,18 +194,14 @@ export default function Register() {
             </button>
           </div>
 
-          {/* Confirm Password */}
-          <div className="relative">
-            <input
+          <input
             type="password"
             name="confirmPassword"
             placeholder="Confirm Password"
             required
             className="w-full px-4 py-2 text-[#8B5E3C] border rounded-md focus:ring-2 focus:ring-[#8B5E3C]"
-            />
-          </div>  
+          />
 
-          {/* Register Button */}
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
