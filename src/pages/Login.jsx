@@ -1,176 +1,320 @@
+/* eslint-disable no-unused-vars */
 import { useContext, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
 import axios from "axios";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Sparkles,
+  ShieldCheck,
+  Chrome,
+  Loader2,
+  XCircle,
+  CheckCircle2,
+} from "lucide-react";
+
+// ---------- Gorgeous Toast ----------
+const showToast = {
+  success: (title, desc) =>
+    toast.custom(
+      (t) => (
+        <div
+          className={`pointer-events-auto w-[92vw] max-w-sm rounded-2xl border border-emerald-200 bg-white shadow-xl ${
+            t.visible ? "animate-enter" : "animate-leave"
+          }`}
+        >
+          <div className="p-4 flex gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-emerald-50 grid place-items-center">
+              <CheckCircle2 className="text-emerald-600" size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-emerald-700">{title}</p>
+              {desc ? <p className="text-sm text-gray-600 mt-0.5">{desc}</p> : null}
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="h-8 w-8 rounded-xl hover:bg-gray-100 grid place-items-center"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="h-1 w-full bg-emerald-100 overflow-hidden rounded-b-2xl">
+            <div className="h-full w-full bg-emerald-500 animate-[toastbar_3s_linear_forwards]" />
+          </div>
+        </div>
+      ),
+      { duration: 3000 }
+    ),
+
+  error: (title, desc) =>
+    toast.custom(
+      (t) => (
+        <div
+          className={`pointer-events-auto w-[92vw] max-w-sm rounded-2xl border border-rose-200 bg-white shadow-xl ${
+            t.visible ? "animate-enter" : "animate-leave"
+          }`}
+        >
+          <div className="p-4 flex gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-rose-50 grid place-items-center">
+              <XCircle className="text-rose-600" size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-rose-700">{title}</p>
+              {desc ? <p className="text-sm text-gray-600 mt-0.5">{desc}</p> : null}
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="h-8 w-8 rounded-xl hover:bg-gray-100 grid place-items-center"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="h-1 w-full bg-rose-100 overflow-hidden rounded-b-2xl">
+            <div className="h-full w-full bg-rose-500 animate-[toastbar_3s_linear_forwards]" />
+          </div>
+        </div>
+      ),
+      { duration: 3200 }
+    ),
+};
 
 export default function Login() {
   const { loginUser, googleLogin } = useContext(AuthContext);
 
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
 
-  // ✅ Email Login
+  const busy = loadingEmail || loadingGoogle;
+
+  // Email Login
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (busy) return;
 
     const form = e.target;
-    const email = form.email.value;
+    const email = form.email.value.trim();
     const password = form.password.value;
 
+    if (!email) return showToast.error("Email required", "Please enter your email.");
+    if (!password) return showToast.error("Password required", "Please enter your password.");
+
     try {
-      setLoading(true);
+      setLoadingEmail(true);
 
       const result = await loginUser(email, password);
       const user = result.user;
 
-      // ✅ Save user in MongoDB
+      // Save user in MongoDB
       await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
         name: user.displayName || "",
         email: user.email,
         photoURL: user.photoURL || "",
       });
 
-      toast.success("Login successful 🎉");
+      showToast.success("Welcome back!", "Login successful.");
       navigate(from, { replace: true });
-
     } catch (error) {
-      toast.error(error.message);
+      console.log(error);
+      showToast.error("Login failed", error?.message || "Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingEmail(false);
     }
   };
 
-  // ✅ Google Login
+  // Google Login
   const handleGoogleLogin = async () => {
+    if (busy) return;
+
     try {
-      setLoading(true);
+      setLoadingGoogle(true);
 
       const result = await googleLogin();
       const user = result.user;
 
-      // ✅ Save user in MongoDB
+      // Save user in MongoDB
       await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
         name: user.displayName || "",
         email: user.email,
         photoURL: user.photoURL || "",
       });
 
-      toast.success("Google login successful 🎉");
+      showToast.success("Signed in with Google", "You're good to go.");
       navigate(from, { replace: true });
-
     } catch (error) {
-      toast.error(error.message);
+      console.log(error);
+      showToast.error("Google login failed", error?.message || "Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingGoogle(false);
     }
   };
 
   return (
     <div className="relative min-h-screen bg-base-100 flex items-center justify-center px-4 overflow-hidden">
-
+      {/* floating blobs */}
       <motion.div
         animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -top-30 -left-30 w-80 h-80 bg-[#8B5E3C] opacity-10 rounded-full blur-3xl"
+        className="absolute -top-24 -left-24 w-80 h-80 bg-[#8B5E3C] opacity-10 rounded-full blur-3xl"
       />
-
       <motion.div
         animate={{ x: [0, -40, 0], y: [0, 40, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -bottom-30 -right-30 w-80 h-80 bg-[#A47148] opacity-10 rounded-full blur-3xl"
+        className="absolute -bottom-24 -right-24 w-80 h-80 bg-[#A47148] opacity-10 rounded-full blur-3xl"
       />
 
+      {/* card */}
       <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+        initial={{ opacity: 0, y: 26, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md bg-base-200 shadow-xl rounded-xl p-8"
+        transition={{ duration: 0.45 }}
+        className="relative w-full max-w-md bg-base-200 shadow-2xl rounded-3xl border border-base-300 overflow-hidden"
       >
-        <h2 className="text-2xl font-bold text-center text-[#8B5E3C] mb-6">
-          Login to BookOrbit
-        </h2>
+        {/* top accent */}
+        <div className="h-1.5 w-full bg-linear-to-r from-[#8B5E3C] via-[#A47148] to-[#8B5E3C]" />
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <div className="p-6 sm:p-8">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full bg-[#8B5E3C]/10 text-[#8B5E3C]">
+                <ShieldCheck size={14} />
+                Secure access
+              </p>
+              <h2 className="mt-3 text-2xl font-extrabold text-[#8B5E3C]">
+                Login to BookOrbit
+              </h2>
+              <p className="text-sm text-base-content/60 mt-1">
+                Continue to your dashboard and orders.
+              </p>
+            </div>
 
-          <div>
-            <label className="block mb-1 font-medium text-[#8B5E3C]">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              required
-              placeholder="Enter your email"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#8B5E3C]"
-            />
+            <div className="hidden sm:flex items-center gap-2 text-[#8B5E3C]">
+              <Sparkles size={18} />
+            </div>
           </div>
 
-          <div className="relative">
-            <label className="block mb-1 font-medium text-[#8B5E3C]">
-              Password
+          <form onSubmit={handleLogin} className="mt-6 space-y-4">
+            {/* Email */}
+            <label className="block">
+              <span className="text-xs font-semibold text-base-content/60">Email</span>
+              <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
+                <Mail size={16} className="text-[#8B5E3C]" />
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  disabled={busy}
+                  placeholder="Enter your email"
+                  className="w-full bg-transparent outline-none text-sm"
+                />
+              </div>
             </label>
 
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              required
-              placeholder="Enter your password"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#8B5E3C]"
-            />
+            {/* Password */}
+            <label className="block">
+              <span className="text-xs font-semibold text-base-content/60">Password</span>
+              <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
+                <Lock size={16} className="text-[#8B5E3C]" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  required
+                  disabled={busy}
+                  placeholder="Enter your password"
+                  className="w-full bg-transparent outline-none text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="h-8 w-8 rounded-xl hover:bg-base-200 grid place-items-center"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  disabled={busy}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} className="text-base-content/60" />
+                  ) : (
+                    <Eye size={18} className="text-base-content/60" />
+                  )}
+                </button>
+              </div>
+            </label>
 
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-9 text-gray-500 hover:text-[#8B5E3C] transition"
+            {/* Submit */}
+            <motion.button
+              whileHover={{ scale: busy ? 1 : 1.02 }}
+              whileTap={{ scale: busy ? 1 : 0.98 }}
+              type="submit"
+              disabled={busy}
+              className="w-full btn border-0 bg-[#8B5E3C] text-white hover:bg-[#A47148] rounded-2xl"
             >
-              {showPassword ? "🙈" : "👁"}
-            </button>
+              {loadingEmail ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="animate-spin" size={18} />
+                  Logging in...
+                </span>
+              ) : (
+                "Login"
+              )}
+            </motion.button>
+          </form>
+
+          {/* Divider */}
+          <div className="my-5 flex items-center">
+            <div className="grow border-t border-base-300"></div>
+            <span className="mx-3 text-base-content/50 text-xs font-semibold">OR</span>
+            <div className="grow border-t border-base-300"></div>
           </div>
 
+          {/* Google */}
           <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#8B5E3C] text-white py-2 rounded-md font-medium hover:bg-[#A47148] transition"
+            whileHover={{ scale: busy ? 1 : 1.02 }}
+            whileTap={{ scale: busy ? 1 : 0.98 }}
+            onClick={handleGoogleLogin}
+            disabled={busy}
+            className="w-full btn rounded-2xl bg-base-100 border border-[#8B5E3C]/40 text-[#8B5E3C] hover:bg-[#8B5E3C] hover:text-white"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loadingGoogle ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="animate-spin" size={18} />
+                Connecting...
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                <Chrome size={18} />
+                Continue with Google
+              </span>
+            )}
           </motion.button>
-        </form>
 
-        <div className="my-4 flex items-center">
-          <div className="grow border-t"></div>
-          <span className="mx-3 text-gray-500 text-sm">OR</span>
-          <div className="grow border-t"></div>
+          {/* footer */}
+          <p className="mt-6 text-center text-sm text-base-content/60">
+            Don’t have an account?{" "}
+            <Link to="/register" className="text-[#8B5E3C] font-semibold hover:underline">
+              Register
+            </Link>
+          </p>
         </div>
-
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full border border-[#8B5E3C] text-[#8B5E3C] py-2 rounded-md font-medium hover:bg-[#8B5E3C] hover:text-white transition"
-        >
-          Continue with Google
-        </motion.button>
-
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Don’t have an account?{" "}
-          <Link
-            to="/register"
-            className="text-[#8B5E3C] font-medium hover:underline"
-          >
-            Register
-          </Link>
-        </p>
       </motion.div>
+
+      {/* toast animations */}
+      <style>{`
+        @keyframes toastbar { from { transform: translateX(-100%); } to { transform: translateX(0%); } }
+        .animate-enter { animation: enter 200ms ease-out; }
+        .animate-leave { animation: leave 160ms ease-in forwards; }
+        @keyframes enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes leave { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(6px) scale(.98); } }
+      `}</style>
     </div>
   );
 }

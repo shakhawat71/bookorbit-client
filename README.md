@@ -1,16 +1,104 @@
-# React + Vite
+BookOrbit — Online Book Delivery Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Live Website
 
-Currently, two official plugins are available:
+https://your-live-site-url.com
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Project Overview
 
-## React Compiler
+BookOrbit is a modern online book ordering and delivery platform where users can browse books, purchase them online, and receive delivery across different cities in Bangladesh.
+The system supports multiple roles including Admin, Librarian, and User, allowing efficient management of books, orders, and deliveries.
+Users can review books, manage wishlists, and track their orders from a responsive and animated user interface.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Purpose
 
-## Expanding the ESLint configuration
+The goal of this project is to create a full-stack book marketplace that allows:
+Book browsing
+Online ordering
+Delivery management
+Role-based dashboards
+Book reviews and ratings
+It demonstrates modern full-stack web development using MERN stack technologies with a polished UI/UX.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Key Features
+
+(a) Auhentication
+    1. Email & Password login
+    2. Google Authentication
+    3. Secure protected routes
+
+(b)  Management
+    1. View all books
+    2. Detailed book pages
+    3. Book ratings & reviews
+    4. Wishlist feature
+
+(c) Order System
+Buy books online
+1. Buy books online
+2. Order management dashboard
+3. Order status updates (Pending -> Shipped -> Delivered)
+
+(c)Review System
+1. Verified purchase reviews
+2. Star ratings
+3. Review eligibility check
+
+(d)Role Based Dashboard
+    1. Admin
+        a. Manage users
+        b. Change roles
+    2. Librarian
+        a. Manage books
+        b. Handle orders
+    3. User
+        a. order books
+        b. view orders
+        c. leave reviews
+
+
+UI/UX Features
+
+Responsive design
+
+Animated UI (Framer Motion)
+
+Beautiful custom toast notifications
+
+Modern SaaS-style dashboard
+
+
+Tech Stack
+    1. Frontend
+        a. React
+        b. React Router
+        c. Tailwind CSS
+        d. Daisy UI
+        e. Frame Motion
+
+    2. Backend
+        a. Node.js
+        b. Express.js
+        c. MongoDB
+        d. Firebase Authentication
+
+NPM Packages Used
+1. Core Package
+    a. react
+    b. react-dom
+    c. react-router-dom
+    d. UI & Animation
+    e. framer-motion
+    f. lucide-react
+    g. react-hot-toast
+    h. sweetalert2
+    i. daisyui
+    j. tailwindcss
+    k. HTTP & API
+    l. axios
+    m. Authentication
+    n. firebase
+    p. imgbb
+
+
+Devoloped By: Shakhawat Hossin

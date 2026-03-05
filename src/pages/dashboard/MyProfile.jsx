@@ -1,10 +1,3 @@
-// ✅ src/pages/dashboard/MyProfile.jsx (UPDATED FULL)
-// Features:
-// ✅ Update display name
-// ✅ Upload new profile picture (file input -> imgbb -> updateProfile)
-// ✅ Change password (requires current password -> re-authenticate -> updatePassword)
-// ✅ Sync updated name/photo to MongoDB: PUT /users
-
 import { useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -96,7 +89,7 @@ export default function MyProfile() {
         photoURL: photoURL || "",
       });
 
-      toast.success("Profile updated ✅");
+      toast.success("Profile updated");
       setImageFile(null);
     } catch (err) {
       console.log(err);
@@ -122,7 +115,7 @@ export default function MyProfile() {
     try {
       setChangingPass(true);
 
-      // ✅ Re-authenticate user using current password
+      // Re-authenticate user using current password
       const credential = EmailAuthProvider.credential(
         user.email,
         currentPassword
@@ -130,7 +123,7 @@ export default function MyProfile() {
 
       await reauthenticateWithCredential(auth.currentUser, credential);
 
-      // ✅ Update password
+      // Update password
       await updatePassword(auth.currentUser, newPassword);
 
       toast.success("Password changed ✅");

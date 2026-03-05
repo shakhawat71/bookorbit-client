@@ -39,7 +39,7 @@ const router = createBrowserRouter([
       { path: "/books", element: <AllBooks /> },
       { path: "/books/:id", element: <BookDetails /> },
 
-      // ✅ Buy page (must login first)
+      // Buy page (must login first)
       {
         path: "/books/:id/buy",
         element: (
@@ -63,14 +63,14 @@ const router = createBrowserRouter([
           </PrivateRoute>
         ),
         children: [
-          // 👤 USER ROUTES
+          // USER ROUTES
           { path: "my-orders", element: <MyOrders /> },
           { path: "my-profile", element: <MyProfile /> },
           { path: "invoices", element: <Invoices /> },
           { path: "wishlist", element: <Wishlist /> },
           { path: "payment/:id", element: <Payment /> },
 
-          // 📚 LIBRARIAN ROUTES
+          // LIBRARIAN ROUTES
           {
             path: "add-book",
             element: (
@@ -104,7 +104,7 @@ const router = createBrowserRouter([
             ),
           },
 
-          // 🛠 ADMIN ROUTES
+          // ADMIN ROUTES
           {
             path: "all-users",
             element: (

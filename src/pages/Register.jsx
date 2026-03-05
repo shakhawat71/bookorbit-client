@@ -1,102 +1,193 @@
-import { useContext, useState } from "react";
+/* eslint-disable no-unused-vars */
+import { useContext, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { AuthContext } from "../contexts/AuthContext";
-import Swal from "sweetalert2";
 import axios from "axios";
+import toast from "react-hot-toast";
+import {
+  UploadCloud,
+  User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Chrome,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
+
+// ---------- Gorgeous Toast ----------
+const showToast = {
+  success: (title, desc) =>
+    toast.custom(
+      (t) => (
+        <div
+          className={`pointer-events-auto w-[92vw] max-w-sm rounded-2xl border border-emerald-200 bg-white shadow-xl ${
+            t.visible ? "animate-enter" : "animate-leave"
+          }`}
+        >
+          <div className="p-4 flex gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-emerald-50 grid place-items-center">
+              <CheckCircle2 className="text-emerald-600" size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-emerald-700">{title}</p>
+              {desc ? <p className="text-sm text-gray-600 mt-0.5">{desc}</p> : null}
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="h-8 w-8 rounded-xl hover:bg-gray-100 grid place-items-center"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="h-1 w-full bg-emerald-100 overflow-hidden rounded-b-2xl">
+            <div className="h-full w-full bg-emerald-500 animate-[toastbar_3s_linear_forwards]" />
+          </div>
+        </div>
+      ),
+      { duration: 3000 }
+    ),
+
+  error: (title, desc) =>
+    toast.custom(
+      (t) => (
+        <div
+          className={`pointer-events-auto w-[92vw] max-w-sm rounded-2xl border border-rose-200 bg-white shadow-xl ${
+            t.visible ? "animate-enter" : "animate-leave"
+          }`}
+        >
+          <div className="p-4 flex gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-rose-50 grid place-items-center">
+              <XCircle className="text-rose-600" size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-rose-700">{title}</p>
+              {desc ? <p className="text-sm text-gray-600 mt-0.5">{desc}</p> : null}
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="h-8 w-8 rounded-xl hover:bg-gray-100 grid place-items-center"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="h-1 w-full bg-rose-100 overflow-hidden rounded-b-2xl">
+            <div className="h-full w-full bg-rose-500 animate-[toastbar_3s_linear_forwards]" />
+          </div>
+        </div>
+      ),
+      { duration: 3200 }
+    ),
+};
 
 export default function Register() {
-  const { createUser, updateUserProfile, googleLogin } =
-    useContext(AuthContext);
+  const { createUser, updateUserProfile, googleLogin } = useContext(AuthContext);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [loading, setLoading] = useState(false);
+
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
 
   const navigate = useNavigate();
+  const busy = loadingEmail || loadingGoogle;
+
+  const apiKey = useMemo(() => import.meta.env.VITE_IMGBB_API_KEY, []);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type?.startsWith("image/")) {
+      showToast.error("Invalid file", "Please choose an image.");
+      return;
+    }
+
     setImageFile(file);
-    if (file) setPreview(URL.createObjectURL(file));
+    setPreview(URL.createObjectURL(file));
   };
 
   const uploadImage = async () => {
-    if (!imageFile) return null;
+    if (!imageFile) return "";
 
-    const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
+    if (!apiKey) {
+      // not fatal — just skip upload
+      return "";
+    }
 
     const formData = new FormData();
     formData.append("image", imageFile);
 
-    const response = await fetch(
-      `https://api.imgbb.com/1/upload?key=${apiKey}`,
-      { method: "POST", body: formData }
-    );
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+      method: "POST",
+      body: formData,
+    });
 
     const data = await response.json();
-    return data.data.display_url;
+    return data?.data?.display_url || "";
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (busy) return;
 
     const form = e.target;
-    const name = form.name.value;
-    const email = form.email.value;
+    const name = form.name.value.trim();
+    const email = form.email.value.trim();
     const password = form.password.value;
     const confirmPassword = form.confirmPassword.value;
 
+    if (!name) return showToast.error("Name required", "Please enter your name.");
+    if (!email) return showToast.error("Email required", "Please enter your email.");
+
+    if (password.length < 6) {
+      return showToast.error("Weak password", "Use at least 6 characters.");
+    }
+
     if (password !== confirmPassword) {
-      return Swal.fire({
-        icon: "error",
-        title: "Passwords do not match!",
-        confirmButtonColor: "#8B5E3C",
-      });
+      return showToast.error("Passwords do not match", "Please retype correctly.");
     }
 
     try {
-      setLoading(true);
+      setLoadingEmail(true);
 
       const result = await createUser(email, password);
-      // eslint-disable-next-line no-unused-vars
       const user = result.user;
 
-      let photoURL = null;
-      if (imageFile) photoURL = await uploadImage();
+      const photoURL = await uploadImage();
 
-      await updateUserProfile(name, photoURL);
+      await updateUserProfile(name, photoURL || "");
 
-      // ✅ Save user in MongoDB
+      // Save user in MongoDB
       await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
         name,
         email,
-        photoURL,
+        photoURL: photoURL || "",
       });
 
-      Swal.fire({
-        icon: "success",
-        title: "Account Created",
-        confirmButtonColor: "#8B5E3C",
-      }).then(() => navigate("/"));
-
+      showToast.success("Account created", "Welcome to BookOrbit!");
+      navigate("/");
     } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Registration Failed",
-        text: error.message,
-        confirmButtonColor: "#8B5E3C",
-      });
+      console.log(error);
+      showToast.error("Registration failed", error?.message || "Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingEmail(false);
     }
   };
 
   const handleGoogleRegister = async () => {
+    if (busy) return;
+
     try {
-      setLoading(true);
+      setLoadingGoogle(true);
 
       const result = await googleLogin();
       const user = result.user;
@@ -107,129 +198,236 @@ export default function Register() {
         photoURL: user.photoURL || "",
       });
 
-      Swal.fire({
-        icon: "success",
-        title: "Registered with Google!",
-        confirmButtonColor: "#8B5E3C",
-      }).then(() => navigate("/"));
-
+      showToast.success("Registered with Google", "You're signed in.");
+      navigate("/");
     } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Google Login Failed",
-        text: error.message,
-        confirmButtonColor: "#8B5E3C",
-      });
+      console.log(error);
+      showToast.error("Google sign-in failed", error?.message || "Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingGoogle(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-base-100 flex items-center justify-center px-4">
+    <div className="relative min-h-screen bg-base-100 flex items-center justify-center px-4 overflow-hidden">
+      {/* soft blobs */}
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-base-200 shadow-xl rounded-xl p-8"
+        animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -top-24 -left-24 w-80 h-80 bg-[#8B5E3C] opacity-10 rounded-full blur-3xl"
+      />
+      <motion.div
+        animate={{ x: [0, -40, 0], y: [0, 40, 0] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -bottom-24 -right-24 w-80 h-80 bg-[#A47148] opacity-10 rounded-full blur-3xl"
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 26, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45 }}
+        className="relative w-full max-w-md bg-base-200 shadow-2xl rounded-3xl border border-base-300 overflow-hidden"
       >
-        <h2 className="text-2xl font-bold text-center text-[#8B5E3C] mb-6">
-          Create Your Account
-        </h2>
+        <div className="h-1.5 w-full bg-linear-to-r from-[#8B5E3C] via-[#A47148] to-[#8B5E3C]" />
 
-        <form onSubmit={handleRegister} className="space-y-4">
+        <div className="p-6 sm:p-8">
+          <h2 className="text-2xl font-extrabold text-center text-[#8B5E3C]">
+            Create Your Account
+          </h2>
+          <p className="text-center text-sm text-base-content/60 mt-1">
+            Join BookOrbit and start ordering.
+          </p>
 
-          <div className="flex flex-col items-center">
-            {preview && (
-              <motion.img
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                src={preview}
-                alt="Preview"
-                className="w-24 h-24 rounded-full object-cover border-4 border-[#8B5E3C] mb-3"
+          <form onSubmit={handleRegister} className="mt-6 space-y-4">
+            {/* Image */}
+            <div className="bg-base-100 border border-base-300 rounded-3xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-14 w-14 rounded-2xl bg-[#8B5E3C]/10 border border-[#8B5E3C]/20 grid place-items-center overflow-hidden">
+                  {preview ? (
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <UploadCloud className="text-[#8B5E3C]" size={20} />
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <p className="font-bold text-[#8B5E3C]">Profile Image</p>
+                  <p className="text-xs text-base-content/60">
+                    Optional — JPG/PNG recommended
+                  </p>
+                </div>
+              </div>
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                disabled={busy}
+                className="file-input file-input-bordered w-full mt-3"
               />
-            )}
+            </div>
 
-            <label className="text-[#8B5E3C] font-medium mb-1">
-              Profile Image
+            {/* Name */}
+            <label className="block">
+              <span className="text-xs font-semibold text-base-content/60">Full Name</span>
+              <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
+                <User size={16} className="text-[#8B5E3C]" />
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  disabled={busy}
+                  placeholder="Your full name"
+                  className="w-full bg-transparent outline-none text-sm"
+                />
+              </div>
             </label>
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="file-input file-input-bordered w-full"
-            />
-          </div>
+            {/* Email */}
+            <label className="block">
+              <span className="text-xs font-semibold text-base-content/60">Email</span>
+              <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
+                <Mail size={16} className="text-[#8B5E3C]" />
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  disabled={busy}
+                  placeholder="you@example.com"
+                  className="w-full bg-transparent outline-none text-sm"
+                />
+              </div>
+            </label>
 
-          <input
-            type="text"
-            name="name"
-            placeholder="Full Name"
-            required
-            className="w-full px-4 py-2 text-[#8B5E3C] border rounded-md focus:ring-2 focus:ring-[#8B5E3C]"
-          />
+            {/* Password */}
+            <label className="block">
+              <span className="text-xs font-semibold text-base-content/60">Password</span>
+              <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
+                <Lock size={16} className="text-[#8B5E3C]" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  required
+                  disabled={busy}
+                  placeholder="Create a password"
+                  className="w-full bg-transparent outline-none text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="h-8 w-8 rounded-xl hover:bg-base-200 grid place-items-center"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  disabled={busy}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} className="text-base-content/60" />
+                  ) : (
+                    <Eye size={18} className="text-base-content/60" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-base-content/50 mt-1">
+                Use at least 6 characters.
+              </p>
+            </label>
 
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            required
-            className="w-full px-4 py-2 text-[#8B5E3C] border rounded-md focus:ring-2 focus:ring-[#8B5E3C]"
-          />
+            {/* Confirm Password */}
+            <label className="block">
+              <span className="text-xs font-semibold text-base-content/60">
+                Confirm Password
+              </span>
+              <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
+                <Lock size={16} className="text-[#8B5E3C]" />
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  name="confirmPassword"
+                  required
+                  disabled={busy}
+                  placeholder="Retype password"
+                  className="w-full bg-transparent outline-none text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((p) => !p)}
+                  className="h-8 w-8 rounded-xl hover:bg-base-200 grid place-items-center"
+                  aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                  disabled={busy}
+                >
+                  {showConfirm ? (
+                    <EyeOff size={18} className="text-base-content/60" />
+                  ) : (
+                    <Eye size={18} className="text-base-content/60" />
+                  )}
+                </button>
+              </div>
+            </label>
 
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Password"
-              required
-              className="w-full px-4 py-2 text-[#8B5E3C] border rounded-md focus:ring-2 focus:ring-[#8B5E3C]"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-2.5"
+            <motion.button
+              whileHover={{ scale: busy ? 1 : 1.02 }}
+              whileTap={{ scale: busy ? 1 : 0.98 }}
+              type="submit"
+              disabled={busy}
+              className="w-full btn border-0 bg-[#8B5E3C] text-white hover:bg-[#A47148] rounded-2xl"
             >
-              {showPassword ? "🙈" : "👁"}
-            </button>
-          </div>
+              {loadingEmail ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="animate-spin" size={18} />
+                  Creating...
+                </span>
+              ) : (
+                "Register"
+              )}
+            </motion.button>
+          </form>
 
-          <input
-            type="password"
-            name="confirmPassword"
-            placeholder="Confirm Password"
-            required
-            className="w-full px-4 py-2 text-[#8B5E3C] border rounded-md focus:ring-2 focus:ring-[#8B5E3C]"
-          />
+          {/* Divider */}
+          <div className="my-5 flex items-center">
+            <div className="grow border-t border-base-300"></div>
+            <span className="mx-3 text-base-content/50 text-xs font-semibold">OR</span>
+            <div className="grow border-t border-base-300"></div>
+          </div>
 
           <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#8B5E3C] text-white py-2 rounded-md hover:bg-[#A47148]"
+            whileHover={{ scale: busy ? 1 : 1.02 }}
+            whileTap={{ scale: busy ? 1 : 0.98 }}
+            onClick={handleGoogleRegister}
+            disabled={busy}
+            className="w-full btn rounded-2xl bg-base-100 border border-[#8B5E3C]/40 text-[#8B5E3C] hover:bg-[#8B5E3C] hover:text-white"
           >
-            {loading ? "Creating..." : "Register"}
+            {loadingGoogle ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="animate-spin" size={18} />
+                Connecting...
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                <Chrome size={18} />
+                Register with Google
+              </span>
+            )}
           </motion.button>
-        </form>
 
-        <div className="my-4 text-center text-gray-500 text-sm">OR</div>
-
-        <button
-          onClick={handleGoogleRegister}
-          disabled={loading}
-          className="w-full border border-[#8B5E3C] text-[#8B5E3C] py-2 rounded-md hover:bg-[#8B5E3C] hover:text-white"
-        >
-          Register with Google
-        </button>
-
-        <p className="mt-6 text-center text-sm">
-          Already have an account?{" "}
-          <Link to="/login" className="text-[#8B5E3C] hover:underline">
-            Login
-          </Link>
-        </p>
+          <p className="mt-6 text-center text-sm text-base-content/60">
+            Already have an account?{" "}
+            <Link to="/login" className="text-[#8B5E3C] font-semibold hover:underline">
+              Login
+            </Link>
+          </p>
+        </div>
       </motion.div>
+
+      {/* toast animations */}
+      <style>{`
+        @keyframes toastbar { from { transform: translateX(-100%); } to { transform: translateX(0%); } }
+        .animate-enter { animation: enter 200ms ease-out; }
+        .animate-leave { animation: leave 160ms ease-in forwards; }
+        @keyframes enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes leave { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(6px) scale(.98); } }
+      `}</style>
     </div>
   );
 }
