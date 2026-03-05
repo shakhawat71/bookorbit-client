@@ -1,7 +1,3 @@
-// ✅ src/pages/dashboard/MyOrders.jsx (FULL UPDATED FILE)
-// - Cancel button hidden after payment (paid)
-// - Pay Now hidden after payment
-// - Cancel also hidden when cancelled
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -29,7 +25,6 @@ export default function MyOrders() {
 
   useEffect(() => {
     loadOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCancel = async (orderId) => {
@@ -111,8 +106,6 @@ export default function MyOrders() {
                 const busy = actionLoadingId === order._id;
 
                 // ✅ Button visibility rules:
-                // Cancel -> only when pending AND unpaid
-                // Pay Now -> only when pending AND unpaid
                 const showCancel = isPending && isUnpaid && !isCancelled;
                 const showPayNow = isPending && isUnpaid && !isCancelled;
 

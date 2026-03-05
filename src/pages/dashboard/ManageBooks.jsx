@@ -1,57 +1,91 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import axiosSecure from "../../hooks/useAxiosSecure";
 
 export default function ManageBooks() {
-  // Temporary dummy books (replace with API later)
-  const [books, setBooks] = useState([
-    {
-      _id: "1",
-      name: "Atomic Habits",
-      author: "James Clear",
-      image: "https://images-na.ssl-images-amazon.com/images/I/81wgcld4wxL.jpg",
-      price: 20,
-      status: "published",
-      librarianEmail: "librarian1@example.com",
-    },
-    {
-      _id: "2",
-      name: "Deep Work",
-      author: "Cal Newport",
-      image: "https://images-na.ssl-images-amazon.com/images/I/71QKQ9mwV7L.jpg",
-      price: 18,
-      status: "unpublished",
-      librarianEmail: "librarian2@example.com",
-    },
-  ]);
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionId, setActionId] = useState(null);
 
-  const toggleStatus = (id) => {
-    setBooks((prev) =>
-      prev.map((book) =>
-        book._id === id
-          ? {
-              ...book,
-              status:
-                book.status === "published"
-                  ? "unpublished"
-                  : "published",
-            }
-          : book
-      )
+  const loadBooks = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosSecure.get("/admin/books");
+      setBooks(res.data || []);
+    } catch (err) {
+      console.log(err);
+      toast.error(err?.response?.data?.message || "Failed to load books");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBooks();
+  }, []);
+
+  const toggleStatus = async (bookId, currentStatus) => {
+    const newStatus = currentStatus === "published" ? "unpublished" : "published";
+
+    try {
+      setActionId(bookId);
+      await axiosSecure.patch(`/admin/books/${bookId}/status`, {
+        status: newStatus,
+      });
+
+      toast.success(`Book marked as ${newStatus}`);
+
+      setBooks((prev) =>
+        prev.map((b) => (b._id === bookId ? { ...b, status: newStatus } : b))
+      );
+    } catch (err) {
+      console.log(err);
+      toast.error(err?.response?.data?.message || "Failed to update status");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const deleteBook = async (bookId) => {
+    const ok = window.confirm(
+      "Delete this book? (All orders of this book will also be deleted)"
     );
+    if (!ok) return;
 
-    toast.success("Book status updated");
+    try {
+      setActionId(bookId);
+      await axiosSecure.delete(`/books/${bookId}`);
+
+      toast.success("Book deleted");
+      setBooks((prev) => prev.filter((b) => b._id !== bookId));
+    } catch (err) {
+      console.log(err);
+      toast.error(err?.response?.data?.message || "Delete failed");
+    } finally {
+      setActionId(null);
+    }
   };
 
-  const deleteBook = (id) => {
-    setBooks((prev) => prev.filter((book) => book._id !== id));
-    toast.success("Book deleted");
-  };
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <span className="loading loading-spinner text-[#8B5E3C]"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-base-200 p-6 rounded-2xl shadow-lg">
-      <h1 className="text-2xl font-bold text-[#8B5E3C] mb-6">
-        Manage Books
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-[#8B5E3C]">Manage Books</h1>
+
+        <button
+          onClick={loadBooks}
+          className="btn btn-sm border border-[#8B5E3C] text-[#8B5E3C] hover:bg-[#8B5E3C] hover:text-white"
+        >
+          Refresh
+        </button>
+      </div>
 
       {books.length === 0 ? (
         <p className="text-gray-500">No books available.</p>
@@ -66,56 +100,58 @@ export default function ManageBooks() {
                 <th>Price</th>
                 <th>Status</th>
                 <th>Librarian</th>
-                <th>Actions</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {books.map((book) => (
-                <tr key={book._id} className="hover">
-                  <td>
-                    <img
-                      src={book.image}
-                      alt={book.name}
-                      className="w-16 h-20 object-cover rounded-lg"
-                    />
-                  </td>
+              {books.map((book) => {
+                const busy = actionId === book._id;
 
-                  <td className="font-semibold">
-                    {book.name}
-                  </td>
+                return (
+                  <tr key={book._id} className="hover">
+                    <td>
+                      <img
+                        src={book.image}
+                        alt={book.name}
+                        className="w-16 h-20 object-cover rounded-lg"
+                      />
+                    </td>
 
-                  <td>{book.author}</td>
+                    <td className="font-semibold">{book.name}</td>
+                    <td>{book.author}</td>
+                    <td>৳ {book.price}</td>
 
-                  <td>${book.price}</td>
+                    <td>
+                      <button
+                        disabled={busy}
+                        onClick={() => toggleStatus(book._id, book.status)}
+                        className={`px-3 py-1 rounded-full text-sm font-medium disabled:opacity-60 ${
+                          book.status === "published"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {busy ? "Updating..." : book.status}
+                      </button>
+                    </td>
 
-                  <td>
-                    <button
-                      onClick={() => toggleStatus(book._id)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        book.status === "published"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {book.status}
-                    </button>
-                  </td>
+                    <td className="text-sm text-gray-600">
+                      {book.librarianEmail || "—"}
+                    </td>
 
-                  <td className="text-sm text-gray-600">
-                    {book.librarianEmail}
-                  </td>
-
-                  <td className="space-x-2">
-                    <button
-                      onClick={() => deleteBook(book._id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    <td className="text-right">
+                      <button
+                        disabled={busy}
+                        onClick={() => deleteBook(book._id)}
+                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-60"
+                      >
+                        {busy ? "Deleting..." : "Delete"}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
