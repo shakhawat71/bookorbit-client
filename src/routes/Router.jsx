@@ -24,6 +24,7 @@ import MyBooks from "../pages/dashboard/MyBooks";
 import EditBook from "../pages/dashboard/EditBook";
 import AllUsers from "../pages/dashboard/AllUsers";
 import ManageBooks from "../pages/dashboard/ManageBooks";
+import Payment from "../pages/dashboard/Payment";
 
 const router = createBrowserRouter([
   {
@@ -66,6 +67,7 @@ const router = createBrowserRouter([
           { path: "my-profile", element: <MyProfile /> },
           { path: "invoices", element: <Invoices /> },
           { path: "wishlist", element: <Wishlist /> },
+          { path: "payment/:id", element: <Payment /> },
 
           // 📚 LIBRARIAN ROUTES
           {
