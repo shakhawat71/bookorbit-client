@@ -25,6 +25,7 @@ import EditBook from "../pages/dashboard/EditBook";
 import AllUsers from "../pages/dashboard/AllUsers";
 import ManageBooks from "../pages/dashboard/ManageBooks";
 import Payment from "../pages/dashboard/Payment";
+import Orders from "../pages/dashboard/Orders";
 
 const router = createBrowserRouter([
   {
@@ -91,6 +92,14 @@ const router = createBrowserRouter([
             element: (
               <RoleProtectedRoute allowedRoles={["librarian", "admin"]}>
                 <EditBook />
+              </RoleProtectedRoute>
+            ),
+          },
+          {
+            path: "orders",
+            element: (
+              <RoleProtectedRoute allowedRoles={["librarian", "admin"]}>
+                <Orders />
               </RoleProtectedRoute>
             ),
           },

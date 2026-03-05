@@ -1,23 +1,18 @@
-// ✅ src/pages/dashboard/MyOrders.jsx (FULL UPDATED FILE)
-// - Cancel button hidden after payment (paid)
-// - Pay Now hidden after payment
-// - Cancel also hidden when cancelled
+// ✅ src/pages/dashboard/Orders.jsx (CREATE THIS FILE)
+// Librarian/Admin Orders Management Page
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosSecure from "../../hooks/useAxiosSecure";
 
-export default function MyOrders() {
+export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoadingId, setActionLoadingId] = useState(null);
-
-  const navigate = useNavigate();
+  const [actionId, setActionId] = useState(null);
 
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const res = await axiosSecure.get("/orders/my");
+      const res = await axiosSecure.get("/librarian/orders");
       setOrders(res.data || []);
     } catch (err) {
       console.log(err);
@@ -29,16 +24,45 @@ export default function MyOrders() {
 
   useEffect(() => {
     loadOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const nextStatus = (status) => {
+    if (status === "pending") return "shipped";
+    if (status === "shipped") return "delivered";
+    return status;
+  };
+
+  const canMoveNext = (status) => status === "pending" || status === "shipped";
+
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      setActionId(orderId);
+      await axiosSecure.patch(`/librarian/orders/${orderId}/status`, {
+        status: newStatus,
+      });
+
+      toast.success(`Order marked as ${newStatus}`);
+
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId ? { ...o, status: newStatus } : o
+        )
+      );
+    } catch (err) {
+      console.log(err);
+      toast.error(err?.response?.data?.message || "Failed to update status");
+    } finally {
+      setActionId(null);
+    }
+  };
 
   const handleCancel = async (orderId) => {
     const ok = window.confirm("Cancel this order?");
     if (!ok) return;
 
     try {
-      setActionLoadingId(orderId);
-      await axiosSecure.patch(`/orders/${orderId}/cancel`);
+      setActionId(orderId);
+      await axiosSecure.patch(`/librarian/orders/${orderId}/cancel`);
       toast.success("Order cancelled");
 
       setOrders((prev) =>
@@ -48,9 +72,9 @@ export default function MyOrders() {
       );
     } catch (err) {
       console.log(err);
-      toast.error(err?.response?.data?.message || "Cancel failed");
+      toast.error(err?.response?.data?.message || "Failed to cancel");
     } finally {
-      setActionLoadingId(null);
+      setActionId(null);
     }
   };
 
@@ -61,6 +85,18 @@ export default function MyOrders() {
       return "";
     }
   };
+
+  const badgeClass = (status) => {
+    if (status === "delivered") return "bg-green-100 text-green-700";
+    if (status === "shipped") return "bg-blue-100 text-blue-700";
+    if (status === "cancelled") return "bg-red-100 text-red-700";
+    return "bg-yellow-100 text-yellow-700"; // pending
+  };
+
+  const payBadgeClass = (paymentStatus) =>
+    paymentStatus === "paid"
+      ? "bg-green-100 text-green-700"
+      : "bg-gray-100 text-gray-700";
 
   if (loading) {
     return (
@@ -73,7 +109,7 @@ export default function MyOrders() {
   return (
     <div className="bg-base-200 p-6 rounded-2xl shadow-lg">
       <div className="flex items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-[#8B5E3C]">My Orders</h1>
+        <h1 className="text-2xl font-bold text-[#8B5E3C]">Orders</h1>
 
         <button
           onClick={loadOrders}
@@ -91,6 +127,7 @@ export default function MyOrders() {
             <thead>
               <tr className="bg-[#8B5E3C] text-white">
                 <th>Book</th>
+                <th>Customer</th>
                 <th>Order Date</th>
                 <th>Status</th>
                 <th>Payment</th>
@@ -99,59 +136,50 @@ export default function MyOrders() {
             </thead>
 
             <tbody>
-              {orders.map((order) => {
-                const status = order.status || "pending";
-                const paymentStatus = order.paymentStatus || "unpaid";
+              {orders.map((o) => {
+                const busy = actionId === o._id;
+                const status = o.status || "pending";
+                const paymentStatus = o.paymentStatus || "unpaid";
 
-                const isPending = status === "pending";
-                const isCancelled = status === "cancelled";
-                const isPaid = paymentStatus === "paid";
-                const isUnpaid = !isPaid;
-
-                const busy = actionLoadingId === order._id;
-
-                // ✅ Button visibility rules:
-                // Cancel -> only when pending AND unpaid
-                // Pay Now -> only when pending AND unpaid
-                const showCancel = isPending && isUnpaid && !isCancelled;
-                const showPayNow = isPending && isUnpaid && !isCancelled;
+                const moveNext = canMoveNext(status);
+                const next = nextStatus(status);
 
                 return (
-                  <tr key={order._id} className="hover">
+                  <tr key={o._id} className="hover">
                     <td>
                       <div className="flex items-center gap-3">
-                        {order.bookImage ? (
+                        {o.bookImage ? (
                           <img
-                            src={order.bookImage}
-                            alt={order.bookName || "Book"}
+                            src={o.bookImage}
+                            alt={o.bookName || "Book"}
                             className="w-12 h-16 object-cover rounded-lg"
                           />
                         ) : null}
 
                         <div>
-                          <p className="font-semibold">
-                            {order.bookName || order.bookTitle || "Untitled"}
-                          </p>
+                          <p className="font-semibold">{o.bookName}</p>
                           <p className="text-sm text-gray-500">
-                            ৳ {order.price ?? order.bookPrice ?? "—"}
+                            ৳ {o.bookPrice ?? "—"}
                           </p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="text-sm">{formatDate(order.orderDate)}</td>
+                    <td className="text-sm">
+                      <p className="font-medium">
+                        {o.customerName || "—"}
+                      </p>
+                      <p className="text-gray-600">{o.userEmail}</p>
+                      <p className="text-gray-600">{o.phone || ""}</p>
+                    </td>
+
+                    <td className="text-sm">{formatDate(o.orderDate)}</td>
 
                     <td>
                       <span
                         className={[
                           "px-3 py-1 rounded-full text-sm font-medium",
-                          status === "delivered"
-                            ? "bg-green-100 text-green-700"
-                            : status === "shipped"
-                            ? "bg-blue-100 text-blue-700"
-                            : status === "cancelled"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700",
+                          badgeClass(status),
                         ].join(" ")}
                       >
                         {status}
@@ -162,9 +190,7 @@ export default function MyOrders() {
                       <span
                         className={[
                           "px-3 py-1 rounded-full text-sm font-medium",
-                          isPaid
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700",
+                          payBadgeClass(paymentStatus),
                         ].join(" ")}
                       >
                         {paymentStatus}
@@ -173,38 +199,28 @@ export default function MyOrders() {
 
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {showCancel && (
+                        {moveNext && status !== "cancelled" && (
                           <button
                             disabled={busy}
-                            onClick={() => handleCancel(order._id)}
+                            onClick={() => handleUpdateStatus(o._id, next)}
+                            className="btn btn-sm bg-[#8B5E3C] text-white hover:bg-[#A47148]"
+                          >
+                            {busy
+                              ? "Updating..."
+                              : status === "pending"
+                              ? "Mark Shipped"
+                              : "Mark Delivered"}
+                          </button>
+                        )}
+
+                        {status !== "delivered" && status !== "cancelled" && (
+                          <button
+                            disabled={busy}
+                            onClick={() => handleCancel(o._id)}
                             className="btn btn-sm bg-red-600 text-white hover:bg-red-700"
                           >
                             {busy ? "Cancelling..." : "Cancel"}
                           </button>
-                        )}
-
-                        {showPayNow && (
-                          <button
-                            disabled={busy}
-                            onClick={() =>
-                              navigate(`/dashboard/payment/${order._id}`)
-                            }
-                            className="btn btn-sm bg-[#8B5E3C] text-white hover:bg-[#A47148]"
-                          >
-                            Pay Now
-                          </button>
-                        )}
-
-                        {isPaid && (
-                          <span className="text-sm text-green-700 font-medium">
-                            Paid ✅
-                          </span>
-                        )}
-
-                        {isCancelled && (
-                          <span className="text-sm text-red-700 font-medium">
-                            Cancelled ❌
-                          </span>
                         )}
                       </div>
                     </td>
