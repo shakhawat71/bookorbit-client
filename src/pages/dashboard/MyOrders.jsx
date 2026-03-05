@@ -1,12 +1,14 @@
+/* eslint-disable no-unused-vars */
+// ✅ src/pages/dashboard/MyOrders.jsx (FULL)
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosSecure from "../../hooks/useAxiosSecure";
+import { useNavigate } from "react-router-dom";
 
 export default function MyOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [actionId, setActionId] = useState(null);
 
   const navigate = useNavigate();
 
@@ -27,25 +29,40 @@ export default function MyOrders() {
     loadOrders();
   }, []);
 
-  const handleCancel = async (orderId) => {
+  const handleCancel = async (id) => {
     const ok = window.confirm("Cancel this order?");
     if (!ok) return;
 
     try {
-      setActionLoadingId(orderId);
-      await axiosSecure.patch(`/orders/${orderId}/cancel`);
-      toast.success("Order cancelled");
-
-      setOrders((prev) =>
-        prev.map((o) =>
-          o._id === orderId ? { ...o, status: "cancelled" } : o
-        )
-      );
+      setActionId(id);
+      await axiosSecure.patch(`/orders/${id}/cancel`);
+      toast.success("Order cancelled ✅");
+      loadOrders();
     } catch (err) {
       console.log(err);
       toast.error(err?.response?.data?.message || "Cancel failed");
     } finally {
-      setActionLoadingId(null);
+      setActionId(null);
+    }
+  };
+
+  // ✅ Payment simulation (your backend has PATCH /orders/:id/pay)
+  const handlePay = async (id) => {
+    const ok = window.confirm("Confirm payment for this order?");
+    if (!ok) return;
+
+    try {
+      setActionId(id);
+      await axiosSecure.patch(`/orders/${id}/pay`);
+      toast.success("Payment done ✅");
+      loadOrders();
+      // Optional: go invoices page directly
+      // navigate("/dashboard/invoices");
+    } catch (err) {
+      console.log(err);
+      toast.error(err?.response?.data?.message || "Payment failed");
+    } finally {
+      setActionId(null);
     }
   };
 
@@ -53,7 +70,7 @@ export default function MyOrders() {
     try {
       return new Date(d).toLocaleString();
     } catch {
-      return "";
+      return "—";
     }
   };
 
@@ -67,7 +84,7 @@ export default function MyOrders() {
 
   return (
     <div className="bg-base-200 p-6 rounded-2xl shadow-lg">
-      <div className="flex items-center justify-between gap-3 mb-6">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#8B5E3C]">My Orders</h1>
 
         <button
@@ -86,124 +103,101 @@ export default function MyOrders() {
             <thead>
               <tr className="bg-[#8B5E3C] text-white">
                 <th>Book</th>
-                <th>Order Date</th>
+                <th>Price</th>
                 <th>Status</th>
                 <th>Payment</th>
-                <th className="text-right">Actions</th>
+                <th>Date</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {orders.map((order) => {
-                const status = order.status || "pending";
-                const paymentStatus = order.paymentStatus || "unpaid";
-
-                const isPending = status === "pending";
-                const isCancelled = status === "cancelled";
-                const isPaid = paymentStatus === "paid";
-                const isUnpaid = !isPaid;
-
-                const busy = actionLoadingId === order._id;
-
-                // ✅ Button visibility rules:
-                const showCancel = isPending && isUnpaid && !isCancelled;
-                const showPayNow = isPending && isUnpaid && !isCancelled;
-
-                return (
-                  <tr key={order._id} className="hover">
-                    <td>
-                      <div className="flex items-center gap-3">
-                        {order.bookImage ? (
-                          <img
-                            src={order.bookImage}
-                            alt={order.bookName || "Book"}
-                            className="w-12 h-16 object-cover rounded-lg"
-                          />
-                        ) : null}
-
-                        <div>
-                          <p className="font-semibold">
-                            {order.bookName || order.bookTitle || "Untitled"}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            ৳ {order.price ?? order.bookPrice ?? "—"}
-                          </p>
-                        </div>
+              {orders.map((o) => (
+                <tr key={o._id} className="hover">
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={o.bookImage}
+                        alt={o.bookName}
+                        className="w-12 h-16 rounded-md object-cover"
+                      />
+                      <div>
+                        <p className="font-semibold">
+                          {o.bookName || o.bookTitle || "—"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {o.librarianEmail || ""}
+                        </p>
                       </div>
-                    </td>
+                    </div>
+                  </td>
 
-                    <td className="text-sm">{formatDate(order.orderDate)}</td>
+                  <td className="font-semibold text-[#8B5E3C]">
+                    ৳ {o.price ?? 0}
+                  </td>
 
-                    <td>
-                      <span
-                        className={[
-                          "px-3 py-1 rounded-full text-sm font-medium",
-                          status === "delivered"
-                            ? "bg-green-100 text-green-700"
-                            : status === "shipped"
-                            ? "bg-blue-100 text-blue-700"
-                            : status === "cancelled"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700",
-                        ].join(" ")}
+                  <td>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        o.status === "delivered"
+                          ? "bg-green-100 text-green-700"
+                          : o.status === "shipped"
+                          ? "bg-blue-100 text-blue-700"
+                          : o.status === "cancelled"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {o.status}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        o.paymentStatus === "paid"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {o.paymentStatus}
+                    </span>
+                  </td>
+
+                  <td className="text-sm">{formatDate(o.orderDate)}</td>
+
+                  <td className="text-center space-x-2">
+                    {/* ✅ Pay button only if unpaid and not cancelled */}
+                    {o.paymentStatus !== "paid" && o.status !== "cancelled" && (
+                      <button
+                        onClick={() => handlePay(o._id)}
+                        disabled={actionId === o._id}
+                        className="btn btn-sm bg-green-600 text-white hover:bg-green-700"
                       >
-                        {status}
-                      </span>
-                    </td>
+                        {actionId === o._id ? "Processing..." : "Pay"}
+                      </button>
+                    )}
 
-                    <td>
-                      <span
-                        className={[
-                          "px-3 py-1 rounded-full text-sm font-medium",
-                          isPaid
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700",
-                        ].join(" ")}
+                    {/* ✅ Cancel button only if pending AND unpaid */}
+                    {o.status === "pending" && o.paymentStatus !== "paid" && (
+                      <button
+                        onClick={() => handleCancel(o._id)}
+                        disabled={actionId === o._id}
+                        className="btn btn-sm bg-red-600 text-white hover:bg-red-700"
                       >
-                        {paymentStatus}
+                        {actionId === o._id ? "Please wait..." : "Cancel"}
+                      </button>
+                    )}
+
+                    {/* ✅ If paid show small badge */}
+                    {o.paymentStatus === "paid" && (
+                      <span className="text-xs font-semibold text-green-700">
+                        Paid ✅
                       </span>
-                    </td>
-
-                    <td className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {showCancel && (
-                          <button
-                            disabled={busy}
-                            onClick={() => handleCancel(order._id)}
-                            className="btn btn-sm bg-red-600 text-white hover:bg-red-700"
-                          >
-                            {busy ? "Cancelling..." : "Cancel"}
-                          </button>
-                        )}
-
-                        {showPayNow && (
-                          <button
-                            disabled={busy}
-                            onClick={() =>
-                              navigate(`/dashboard/payment/${order._id}`)
-                            }
-                            className="btn btn-sm bg-[#8B5E3C] text-white hover:bg-[#A47148]"
-                          >
-                            Pay Now
-                          </button>
-                        )}
-
-                        {isPaid && (
-                          <span className="text-sm text-green-700 font-medium">
-                            Paid ✅
-                          </span>
-                        )}
-
-                        {isCancelled && (
-                          <span className="text-sm text-red-700 font-medium">
-                            Cancelled ❌
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
