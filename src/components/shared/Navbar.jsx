@@ -1,7 +1,7 @@
 import { NavLink, Link } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
-import logo from "../../assets/bookorbitlogo.jpeg";
+import logo from "../../assets/bookorbitlogo.png";
 
 const navLinkClass = ({ isActive }) =>
   `px-4 py-2 rounded-md font-medium transition ${

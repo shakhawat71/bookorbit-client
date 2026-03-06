@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useContext, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { AuthContext } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -98,7 +98,6 @@ export default function Login() {
 
   const busy = loadingEmail || loadingGoogle;
 
-  // Email Login
   const handleLogin = async (e) => {
     e.preventDefault();
     if (busy) return;
@@ -115,15 +114,25 @@ export default function Login() {
 
       const result = await loginUser(email, password);
       const user = result.user;
+      const token = await user.getIdToken(true);
 
-      // Save user in MongoDB
-      await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
-        name: user.displayName || "",
-        email: user.email,
-        photoURL: user.photoURL || "",
-      });
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/users`,
+        {
+          name: user.displayName || "",
+          email: user.email,
+          photoURL: user.photoURL || "",
+        },
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       showToast.success("Welcome back!", "Login successful.");
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       navigate(from, { replace: true });
     } catch (error) {
       console.log(error);
@@ -133,7 +142,6 @@ export default function Login() {
     }
   };
 
-  // Google Login
   const handleGoogleLogin = async () => {
     if (busy) return;
 
@@ -142,15 +150,25 @@ export default function Login() {
 
       const result = await googleLogin();
       const user = result.user;
+      const token = await user.getIdToken(true);
 
-      // Save user in MongoDB
-      await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
-        name: user.displayName || "",
-        email: user.email,
-        photoURL: user.photoURL || "",
-      });
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/users`,
+        {
+          name: user.displayName || "",
+          email: user.email,
+          photoURL: user.photoURL || "",
+        },
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       showToast.success("Signed in with Google", "You're good to go.");
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       navigate(from, { replace: true });
     } catch (error) {
       console.log(error);
@@ -162,7 +180,6 @@ export default function Login() {
 
   return (
     <div className="relative min-h-screen bg-base-100 flex items-center justify-center px-4 overflow-hidden">
-      {/* floating blobs */}
       <motion.div
         animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
@@ -174,14 +191,12 @@ export default function Login() {
         className="absolute -bottom-24 -right-24 w-80 h-80 bg-[#A47148] opacity-10 rounded-full blur-3xl"
       />
 
-      {/* card */}
       <motion.div
         initial={{ opacity: 0, y: 26, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45 }}
         className="relative w-full max-w-md bg-base-200 shadow-2xl rounded-3xl border border-base-300 overflow-hidden"
       >
-        {/* top accent */}
         <div className="h-1.5 w-full bg-linear-to-r from-[#8B5E3C] via-[#A47148] to-[#8B5E3C]" />
 
         <div className="p-6 sm:p-8">
@@ -205,7 +220,6 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
-            {/* Email */}
             <label className="block">
               <span className="text-xs font-semibold text-base-content/60">Email</span>
               <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
@@ -221,7 +235,6 @@ export default function Login() {
               </div>
             </label>
 
-            {/* Password */}
             <label className="block">
               <span className="text-xs font-semibold text-base-content/60">Password</span>
               <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
@@ -250,7 +263,6 @@ export default function Login() {
               </div>
             </label>
 
-            {/* Submit */}
             <motion.button
               whileHover={{ scale: busy ? 1 : 1.02 }}
               whileTap={{ scale: busy ? 1 : 0.98 }}
@@ -269,14 +281,12 @@ export default function Login() {
             </motion.button>
           </form>
 
-          {/* Divider */}
           <div className="my-5 flex items-center">
             <div className="grow border-t border-base-300"></div>
             <span className="mx-3 text-base-content/50 text-xs font-semibold">OR</span>
             <div className="grow border-t border-base-300"></div>
           </div>
 
-          {/* Google */}
           <motion.button
             whileHover={{ scale: busy ? 1 : 1.02 }}
             whileTap={{ scale: busy ? 1 : 0.98 }}
@@ -297,7 +307,6 @@ export default function Login() {
             )}
           </motion.button>
 
-          {/* footer */}
           <p className="mt-6 text-center text-sm text-base-content/60">
             Don’t have an account?{" "}
             <Link to="/register" className="text-[#8B5E3C] font-semibold hover:underline">
@@ -307,7 +316,6 @@ export default function Login() {
         </div>
       </motion.div>
 
-      {/* toast animations */}
       <style>{`
         @keyframes toastbar { from { transform: translateX(-100%); } to { transform: translateX(0%); } }
         .animate-enter { animation: enter 200ms ease-out; }

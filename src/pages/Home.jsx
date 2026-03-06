@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -17,7 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import map from "../assets/Bangladesh_location_map.svg.png"
+import map from "../assets/Bangladesh_location_map.svg.png";
 
 const truncate = (text = "", max = 120) => {
   const t = String(text || "").replace(/\s+/g, " ").trim();
@@ -50,9 +51,7 @@ const stagger = {
 };
 
 const softFloat = (prefersReduced) => ({
-  animate: prefersReduced
-    ? {}
-    : { y: [0, -8, 0], x: [0, 6, 0] },
+  animate: prefersReduced ? {} : { y: [0, -8, 0], x: [0, 6, 0] },
   transition: prefersReduced
     ? {}
     : { duration: 8, repeat: Infinity, ease: "easeInOut" },
@@ -64,7 +63,6 @@ export default function Home() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // slider
   const [active, setActive] = useState(0);
   const SLIDE_COUNT = 3;
   const pauseRef = useRef(false);
@@ -72,19 +70,33 @@ export default function Home() {
   useEffect(() => {
     let mounted = true;
 
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_URL}/books?status=published`
-        );
-        if (mounted) setBooks(res.data || []);
-      } catch (e) {
-        if (mounted) setBooks([]);
-      } finally {
-        if (mounted) setLoading(false);
+    const fetchBooksWithRetry = async (retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await axios.get(
+            `${import.meta.env.VITE_API_URL}/books?status=published`
+          );
+
+          if (mounted) {
+            setBooks(res.data || []);
+            setLoading(false);
+          }
+          return;
+        } catch (error) {
+          if (i === retries - 1) {
+            if (mounted) {
+              setBooks([]);
+              setLoading(false);
+            }
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
       }
-    })();
+    };
+
+    setLoading(true);
+    fetchBooksWithRetry();
 
     return () => {
       mounted = false;
@@ -105,7 +117,6 @@ export default function Home() {
     return sorted.slice(0, 6);
   }, [books]);
 
-  // auto slider (pauses on hover)
   useEffect(() => {
     if (!sliderBooks?.length) return;
 
@@ -156,9 +167,7 @@ export default function Home() {
 
   return (
     <div className="bg-base-100">
-      {/* =============== HERO =============== */}
       <section className="relative overflow-hidden">
-        {/* animated background blobs */}
         <motion.div
           aria-hidden="true"
           className="absolute -top-28 -left-28 h-96 w-96 rounded-full bg-[#8B5E3C] opacity-12 blur-3xl"
@@ -167,9 +176,7 @@ export default function Home() {
         <motion.div
           aria-hidden="true"
           className="absolute -bottom-28 -right-28 h-96 w-96 rounded-full bg-[#A47148] opacity-12 blur-3xl"
-          animate={
-            prefersReducedMotion ? {} : { y: [0, 10, 0], x: [0, -8, 0] }
-          }
+          animate={prefersReducedMotion ? {} : { y: [0, 10, 0], x: [0, -8, 0] }}
           transition={
             prefersReducedMotion
               ? {}
@@ -189,7 +196,6 @@ export default function Home() {
 
         <div className="max-w-7xl mx-auto px-6 py-10">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
-            {/* Left */}
             <motion.div variants={stagger} initial="hidden" animate="show">
               <motion.div
                 variants={fadeUp}
@@ -203,16 +209,14 @@ export default function Home() {
                 variants={fadeUp}
                 className="mt-4 text-4xl md:text-5xl font-extrabold leading-tight text-base-content"
               >
-                Your next book is just one{" "}
-                <span className="text-[#8B5E3C]">delivery</span> away.
+                Your next book is just one <span className="text-[#8B5E3C]">delivery</span> away.
               </motion.h1>
 
               <motion.p
                 variants={fadeUp}
                 className="mt-4 text-base md:text-lg text-base-content/70 max-w-xl"
               >
-                Discover published books, buy instantly,
-                and track your orders from your dashboard.
+                Discover published books, buy instantly, and track your orders from your dashboard.
               </motion.p>
 
               <motion.div variants={fadeUp} className="mt-6 flex flex-wrap gap-3">
@@ -231,11 +235,7 @@ export default function Home() {
                 </Link>
               </motion.div>
 
-              {/* animated pills */}
-              <motion.div
-                variants={stagger}
-                className="mt-7 flex flex-wrap gap-2"
-              >
+              <motion.div variants={stagger} className="mt-7 flex flex-wrap gap-2">
                 {featurePills.map((p) => (
                   <motion.div
                     key={p.text}
@@ -266,7 +266,6 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            {/* Right slider */}
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
@@ -293,11 +292,7 @@ export default function Home() {
                             alt={sliderBooks[active]?.name}
                             className="h-full w-full object-cover"
                             loading="lazy"
-                            animate={
-                              prefersReducedMotion
-                                ? {}
-                                : { scale: [1, 1.06, 1] }
-                            }
+                            animate={prefersReducedMotion ? {} : { scale: [1, 1.06, 1] }}
                             transition={
                               prefersReducedMotion
                                 ? {}
@@ -334,7 +329,6 @@ export default function Home() {
                       </AnimatePresence>
                     </div>
 
-                    {/* controls */}
                     <div className="absolute top-4 right-4 flex items-center gap-2">
                       <motion.button
                         type="button"
@@ -358,7 +352,6 @@ export default function Home() {
                       </motion.button>
                     </div>
 
-                    {/* dots */}
                     <div className="absolute bottom-4 right-4 flex gap-2">
                       {sliderBooks.slice(0, SLIDE_COUNT).map((_, i) => (
                         <button
@@ -385,7 +378,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* =============== LATEST BOOKS =============== */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <motion.div
           initial="hidden"
@@ -447,9 +439,7 @@ export default function Home() {
                     alt={b.name}
                     className="h-56 w-full object-cover"
                     loading="lazy"
-                    whileHover={
-                      prefersReducedMotion ? {} : { scale: 1.05 }
-                    }
+                    whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
                     transition={{ duration: 0.35 }}
                   />
                   <div className="absolute inset-0 pointer-events-none bg-linear-to-t from-black/20 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity" />
@@ -480,7 +470,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* =============== COVERAGE MAP (BANGLADESH) =============== */}
       <section className="bg-base-200/60">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
@@ -553,7 +542,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* =============== WHY CHOOSE =============== */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <motion.div
           initial="hidden"
@@ -607,7 +595,6 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* =============== EXTRA SECTION 1: TESTIMONIALS =============== */}
       <section className="bg-base-200/60">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center justify-between">
@@ -663,7 +650,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* =============== EXTRA SECTION 2: FAQ (animated) =============== */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-3xl font-bold text-[#8B5E3C]">Quick FAQs</h2>

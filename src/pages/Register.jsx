@@ -118,10 +118,7 @@ export default function Register() {
   const uploadImage = async () => {
     if (!imageFile) return "";
 
-    if (!apiKey) {
-      // not fatal — just skip upload
-      return "";
-    }
+    if (!apiKey) return "";
 
     const formData = new FormData();
     formData.append("image", imageFile);
@@ -161,20 +158,30 @@ export default function Register() {
 
       const result = await createUser(email, password);
       const user = result.user;
+      const token = await user.getIdToken(true);
 
       const photoURL = await uploadImage();
 
       await updateUserProfile(name, photoURL || "");
 
-      // Save user in MongoDB
-      await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
-        name,
-        email,
-        photoURL: photoURL || "",
-      });
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/users`,
+        {
+          name,
+          email,
+          photoURL: photoURL || "",
+        },
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       showToast.success("Account created", "Welcome to BookOrbit!");
-      navigate("/");
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      navigate("/", { replace: true });
     } catch (error) {
       console.log(error);
       showToast.error("Registration failed", error?.message || "Please try again.");
@@ -191,15 +198,26 @@ export default function Register() {
 
       const result = await googleLogin();
       const user = result.user;
+      const token = await user.getIdToken(true);
 
-      await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
-        name: user.displayName || "",
-        email: user.email,
-        photoURL: user.photoURL || "",
-      });
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/users`,
+        {
+          name: user.displayName || "",
+          email: user.email,
+          photoURL: user.photoURL || "",
+        },
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       showToast.success("Registered with Google", "You're signed in.");
-      navigate("/");
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      navigate("/", { replace: true });
     } catch (error) {
       console.log(error);
       showToast.error("Google sign-in failed", error?.message || "Please try again.");
@@ -210,7 +228,6 @@ export default function Register() {
 
   return (
     <div className="relative min-h-screen bg-base-100 flex items-center justify-center px-4 overflow-hidden">
-      {/* soft blobs */}
       <motion.div
         animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
@@ -239,7 +256,6 @@ export default function Register() {
           </p>
 
           <form onSubmit={handleRegister} className="mt-6 space-y-4">
-            {/* Image */}
             <div className="bg-base-100 border border-base-300 rounded-3xl p-4">
               <div className="flex items-center gap-3">
                 <div className="h-14 w-14 rounded-2xl bg-[#8B5E3C]/10 border border-[#8B5E3C]/20 grid place-items-center overflow-hidden">
@@ -271,7 +287,6 @@ export default function Register() {
               />
             </div>
 
-            {/* Name */}
             <label className="block">
               <span className="text-xs font-semibold text-base-content/60">Full Name</span>
               <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
@@ -287,7 +302,6 @@ export default function Register() {
               </div>
             </label>
 
-            {/* Email */}
             <label className="block">
               <span className="text-xs font-semibold text-base-content/60">Email</span>
               <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
@@ -303,7 +317,6 @@ export default function Register() {
               </div>
             </label>
 
-            {/* Password */}
             <label className="block">
               <span className="text-xs font-semibold text-base-content/60">Password</span>
               <div className="mt-1 flex items-center gap-2 rounded-2xl border bg-base-100 px-3 py-2">
@@ -335,7 +348,6 @@ export default function Register() {
               </p>
             </label>
 
-            {/* Confirm Password */}
             <label className="block">
               <span className="text-xs font-semibold text-base-content/60">
                 Confirm Password
@@ -384,7 +396,6 @@ export default function Register() {
             </motion.button>
           </form>
 
-          {/* Divider */}
           <div className="my-5 flex items-center">
             <div className="grow border-t border-base-300"></div>
             <span className="mx-3 text-base-content/50 text-xs font-semibold">OR</span>
@@ -420,7 +431,6 @@ export default function Register() {
         </div>
       </motion.div>
 
-      {/* toast animations */}
       <style>{`
         @keyframes toastbar { from { transform: translateX(-100%); } to { transform: translateX(0%); } }
         .animate-enter { animation: enter 200ms ease-out; }

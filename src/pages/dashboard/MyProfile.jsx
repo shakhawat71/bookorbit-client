@@ -9,18 +9,84 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
 } from "firebase/auth";
+import { CheckCircle2, XCircle } from "lucide-react";
+
+// ---------- Gorgeous Toast ----------
+const showToast = {
+  success: (title, desc) =>
+    toast.custom(
+      (t) => (
+        <div
+          className={`pointer-events-auto w-[92vw] max-w-sm rounded-2xl border border-emerald-200 bg-white shadow-xl ${
+            t.visible ? "animate-enter" : "animate-leave"
+          }`}
+        >
+          <div className="p-4 flex gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-emerald-50 grid place-items-center">
+              <CheckCircle2 className="text-emerald-600" size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-emerald-700">{title}</p>
+              {desc ? <p className="text-sm text-gray-600 mt-0.5">{desc}</p> : null}
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="h-8 w-8 rounded-xl hover:bg-gray-100 grid place-items-center"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="h-1 w-full bg-emerald-100 overflow-hidden rounded-b-2xl">
+            <div className="h-full w-full bg-emerald-500 animate-[toastbar_3s_linear_forwards]" />
+          </div>
+        </div>
+      ),
+      { duration: 3000 }
+    ),
+
+  error: (title, desc) =>
+    toast.custom(
+      (t) => (
+        <div
+          className={`pointer-events-auto w-[92vw] max-w-sm rounded-2xl border border-rose-200 bg-white shadow-xl ${
+            t.visible ? "animate-enter" : "animate-leave"
+          }`}
+        >
+          <div className="p-4 flex gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-rose-50 grid place-items-center">
+              <XCircle className="text-rose-600" size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-rose-700">{title}</p>
+              {desc ? <p className="text-sm text-gray-600 mt-0.5">{desc}</p> : null}
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="h-8 w-8 rounded-xl hover:bg-gray-100 grid place-items-center"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="h-1 w-full bg-rose-100 overflow-hidden rounded-b-2xl">
+            <div className="h-full w-full bg-rose-500 animate-[toastbar_3s_linear_forwards]" />
+          </div>
+        </div>
+      ),
+      { duration: 3200 }
+    ),
+};
 
 export default function MyProfile() {
   const { user, role, updateUserProfile } = useContext(AuthContext);
 
-  // ========= Profile states =========
   const [name, setName] = useState(user?.displayName || "");
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(user?.photoURL || "");
 
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // ========= Password states =========
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -44,7 +110,7 @@ export default function MyProfile() {
 
     const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
     if (!apiKey) {
-      toast.error("IMGBB API key missing in .env");
+      showToast.error("Missing API key", "IMGBB API key missing in .env");
       return null;
     }
 
@@ -63,37 +129,50 @@ export default function MyProfile() {
   const handleSaveProfile = async (e) => {
     e.preventDefault();
 
-    if (!user) return toast.error("No user found");
+    if (!user) {
+      showToast.error("No user found", "Please login again.");
+      return;
+    }
 
     try {
       setSavingProfile(true);
 
-      // 1) Upload image if selected
       let photoURL = user?.photoURL || "";
       if (imageFile) {
         const uploadedUrl = await uploadImageToImgbb();
         if (!uploadedUrl) {
           setSavingProfile(false);
-          return toast.error("Image upload failed");
+          return showToast.error("Image upload failed", "Please try again.");
         }
         photoURL = uploadedUrl;
       }
 
-      // 2) Update Firebase profile
       await updateUserProfile(name, photoURL);
 
-      // 3) Sync to MongoDB
-      await axios.put(`${import.meta.env.VITE_API_URL}/users`, {
-        name: name || "",
-        email: user.email,
-        photoURL: photoURL || "",
-      });
+      const token = await auth.currentUser.getIdToken(true);
 
-      toast.success("Profile updated");
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/users`,
+        {
+          name: name || "",
+          email: user.email,
+          photoURL: photoURL || "",
+        },
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      showToast.success("Profile updated", "Your changes have been saved.");
       setImageFile(null);
     } catch (err) {
       console.log(err);
-      toast.error(err?.message || "Failed to update profile");
+      showToast.error(
+        "Update failed",
+        err?.response?.data?.message || err?.message || "Failed to update profile"
+      );
     } finally {
       setSavingProfile(false);
     }
@@ -102,41 +181,47 @@ export default function MyProfile() {
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
-    if (!user?.email) return toast.error("No user email found");
+    if (!user?.email) {
+      showToast.error("No user email found", "Please login again.");
+      return;
+    }
 
     if (newPassword.length < 6) {
-      return toast.error("New password must be at least 6 characters");
+      return showToast.error(
+        "Weak password",
+        "New password must be at least 6 characters"
+      );
     }
 
     if (newPassword !== confirmNewPassword) {
-      return toast.error("New passwords do not match");
+      return showToast.error(
+        "Password mismatch",
+        "New passwords do not match"
+      );
     }
 
     try {
       setChangingPass(true);
 
-      // Re-authenticate user using current password
       const credential = EmailAuthProvider.credential(
         user.email,
         currentPassword
       );
 
       await reauthenticateWithCredential(auth.currentUser, credential);
-
-      // Update password
       await updatePassword(auth.currentUser, newPassword);
 
-      toast.success("Password changed ✅");
+      showToast.success("Password changed", "Your password was updated successfully.");
 
-      // clear fields
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
     } catch (err) {
       console.log(err);
-
-      // common firebase messages: wrong-password, requires-recent-login
-      toast.error(err?.message || "Failed to change password");
+      showToast.error(
+        "Password change failed",
+        err?.message || "Failed to change password"
+      );
     } finally {
       setChangingPass(false);
     }
@@ -144,7 +229,6 @@ export default function MyProfile() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* ===================== PROFILE CARD ===================== */}
       <div className="bg-base-200 p-6 rounded-2xl shadow-lg">
         <h1 className="text-2xl font-bold text-[#8B5E3C] mb-6">My Profile</h1>
 
@@ -218,7 +302,6 @@ export default function MyProfile() {
         </div>
       </div>
 
-      {/* ===================== CHANGE PASSWORD ===================== */}
       <div className="bg-base-200 p-6 rounded-2xl shadow-lg">
         <h2 className="text-lg font-bold text-[#8B5E3C] mb-4">
           Change Password
@@ -280,6 +363,14 @@ export default function MyProfile() {
           </p>
         </form>
       </div>
+
+      <style>{`
+        @keyframes toastbar { from { transform: translateX(-100%); } to { transform: translateX(0%); } }
+        .animate-enter { animation: enter 200ms ease-out; }
+        .animate-leave { animation: leave 160ms ease-in forwards; }
+        @keyframes enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes leave { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(6px) scale(.98); } }
+      `}</style>
     </div>
   );
 }

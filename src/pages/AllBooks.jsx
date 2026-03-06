@@ -31,24 +31,41 @@ export default function AllBooks() {
   const [sort, setSort] = useState("newest"); // newest | price_low | price_high | name
 
   useEffect(() => {
-    let mounted = true;
+  let mounted = true;
 
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/books?status=published`)
-      .then((res) => {
-        if (!mounted) return;
-        setBooks(res.data || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setLoading(false);
-      });
+  const fetchBooksWithRetry = async (retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/books?status=published`
+        );
 
-    return () => {
-      mounted = false;
-    };
-  }, []);
+        if (mounted) {
+          setBooks(res.data || []);
+          setLoading(false);
+        }
+        return;
+      } catch (error) {
+        if (i === retries - 1) {
+          if (mounted) {
+            setBooks([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 700));
+      }
+    }
+  };
+
+  setLoading(true);
+  fetchBooksWithRetry();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
 
   const filteredBooks = useMemo(() => {
     const q = query.trim().toLowerCase();

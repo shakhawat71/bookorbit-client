@@ -1,14 +1,13 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import axiosSecure from "../hooks/useAxiosSecure";
 import { AuthContext } from "../contexts/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Heart } from "lucide-react";
-
 
 // ---------- Toast ----------
 const showToast = {
@@ -51,30 +50,31 @@ const showToast = {
     )),
 };
 
-
 // ---------- Stars ----------
 function Stars({ value = 0 }) {
   const v = Math.round(value);
   return (
     <div className="flex items-center gap-1">
-      {[1,2,3,4,5].map((i) => (
+      {[1, 2, 3, 4, 5].map((i) => (
         <span key={i} className={i <= v ? "text-yellow-500" : "text-gray-300"}>
           ★
         </span>
       ))}
-      <span className="ml-2 text-sm text-gray-600">{value ? value.toFixed(2) : "0.00"}</span>
+      <span className="ml-2 text-sm text-gray-600">
+        {value ? value.toFixed(2) : "0.00"}
+      </span>
     </div>
   );
 }
 
 export default function BookDetails() {
-
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [bookNotFound, setBookNotFound] = useState(false);
 
   const [wishLoading, setWishLoading] = useState(false);
 
@@ -88,25 +88,56 @@ export default function BookDetails() {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // ---------- Fetch Book with retry ----------
+  const fetchBookWithRetry = async (retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/books/${id}`);
+        setBook(res.data);
+        setBookNotFound(false);
+        return true;
+      } catch (error) {
+        const status = error?.response?.status;
 
-  // ---------- Fetch Book ----------
-  const fetchBook = async () => {
-    const res = await axios.get(`${import.meta.env.VITE_API_URL}/books/${id}`);
-    setBook(res.data);
+        // if final attempt, decide what to show
+        if (i === retries - 1) {
+          if (status === 404) {
+            setBook(null);
+            setBookNotFound(true);
+          } else {
+            setBook(null);
+            setBookNotFound(false);
+            showToast.error("Failed to load book", "Please try again.");
+          }
+          return false;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 700));
+      }
+    }
+
+    return false;
   };
 
   // ---------- Fetch Reviews ----------
   const fetchReviews = async () => {
     try {
       setReviewLoading(true);
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/reviews?bookId=${id}`);
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/reviews?bookId=${id}`
+      );
+
       setReviews(res.data || []);
+    } catch (error) {
+      console.log("Failed to load reviews:", error);
+      setReviews([]);
     } finally {
       setReviewLoading(false);
     }
   };
 
-
+  // ---------- Check Review Eligibility ----------
   const checkEligibility = async () => {
     if (!user) {
       setEligible(false);
@@ -124,30 +155,39 @@ export default function BookDetails() {
     }
   };
 
-
   useEffect(() => {
+    let mounted = true;
+
     const run = async () => {
       try {
         setLoading(true);
-        await fetchBook();
+        const ok = await fetchBookWithRetry(3);
+
+        if (!mounted) return;
+
+        if (ok) {
+          await fetchReviews();
+        } else {
+          setReviewLoading(false);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     run();
-    fetchReviews();
-  }, [id]);
 
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
 
   useEffect(() => {
     checkEligibility();
   }, [user, id]);
 
-
   // ---------- Wishlist ----------
   const handleAddWishlist = async () => {
-
     if (!user) {
       showToast.error("Login Required", "Please login to add wishlist");
       return navigate("/login");
@@ -165,7 +205,6 @@ export default function BookDetails() {
       });
 
       showToast.success("Added to Wishlist");
-
     } catch (e) {
       showToast.error("Failed", e?.response?.data?.message);
     } finally {
@@ -173,16 +212,13 @@ export default function BookDetails() {
     }
   };
 
-
   // ---------- Submit Review ----------
   const submitReview = async (e) => {
-
     e.preventDefault();
 
     if (!user) return showToast.error("Login required");
 
     try {
-
       setSubmitting(true);
 
       await axiosSecure.post("/reviews", {
@@ -196,18 +232,14 @@ export default function BookDetails() {
       setComment("");
 
       await fetchReviews();
-      await fetchBook();
+      await fetchBookWithRetry(2);
       await checkEligibility();
-
     } catch (err) {
-
       showToast.error("Review failed", err?.response?.data?.message);
-
     } finally {
       setSubmitting(false);
     }
   };
-
 
   // ---------- Loading ----------
   if (loading) {
@@ -218,7 +250,7 @@ export default function BookDetails() {
     );
   }
 
-  if (!book) {
+  if (bookNotFound || !book) {
     return (
       <div className="text-center py-20">
         <h2 className="text-2xl font-bold text-[#8B5E3C]">Book not found</h2>
@@ -226,63 +258,46 @@ export default function BookDetails() {
     );
   }
 
-
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-10">
-
       {/* BOOK DETAILS */}
       <motion.div
-        initial={{ opacity:0, y:20 }}
-        animate={{ opacity:1, y:0 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         className="bg-base-200 rounded-3xl shadow-xl overflow-hidden"
       >
-
         <div className="grid md:grid-cols-2 gap-0">
-
           {/* IMAGE */}
           <div className="bg-base-100 p-8 flex items-center justify-center">
             <motion.img
-              whileHover={{ scale:1.05 }}
+              whileHover={{ scale: 1.05 }}
               src={book.image}
               alt={book.name}
               className="w-full max-w-xs rounded-xl shadow-lg"
             />
           </div>
 
-
           {/* INFO */}
           <div className="p-6 md:p-10 space-y-4">
-
-            <h1 className="text-3xl font-bold text-[#8B5E3C]">
-              {book.name}
-            </h1>
+            <h1 className="text-3xl font-bold text-[#8B5E3C]">{book.name}</h1>
 
             <p className="text-gray-600">
               Author: <span className="font-medium">{book.author}</span>
             </p>
 
-
             <Stars value={Number(book.avgRating || 0)} />
 
-            <p className="text-sm text-gray-500">
-              {book.reviewCount || 0} review(s)
-            </p>
+            <p className="text-sm text-gray-500">{book.reviewCount || 0} review(s)</p>
 
-
-            <p className="text-gray-700 leading-relaxed">
-              {book.description}
-            </p>
-
+            <p className="text-gray-700 leading-relaxed">{book.description}</p>
 
             <p className="text-xl font-semibold">
               Price: <span className="text-[#8B5E3C]">৳ {book.price}</span>
             </p>
 
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-
               <motion.button
-                whileTap={{ scale:0.95 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => navigate(`/books/${book._id}/buy`)}
                 className="bg-[#8B5E3C] text-white py-2 rounded-lg hover:bg-[#A47148]"
               >
@@ -290,55 +305,43 @@ export default function BookDetails() {
               </motion.button>
 
               <motion.button
-                whileTap={{ scale:0.95 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleAddWishlist}
                 disabled={wishLoading}
                 className="border border-[#8B5E3C] text-[#8B5E3C] py-2 rounded-lg hover:bg-[#8B5E3C] hover:text-white flex items-center justify-center gap-2"
               >
-                <Heart size={16}/>
+                <Heart size={16} />
                 {wishLoading ? "Adding..." : "Wishlist"}
               </motion.button>
-
             </div>
-
           </div>
-
         </div>
       </motion.div>
 
-
-
       {/* REVIEW FORM */}
-
       <motion.div
-        initial={{ opacity:0 }}
-        animate={{ opacity:1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         className="bg-base-200 p-6 rounded-3xl shadow-lg"
       >
-
-        <h2 className="text-xl font-bold text-[#8B5E3C] mb-4">
-          Write a Review
-        </h2>
+        <h2 className="text-xl font-bold text-[#8B5E3C] mb-4">Write a Review</h2>
 
         {!user ? (
           <p>Please login to review</p>
         ) : !eligible ? (
           <p>{eligibleReason}</p>
         ) : (
-
           <form onSubmit={submitReview} className="space-y-4">
-
-            {/* Rating */}
             <div className="flex gap-2">
-              {[1,2,3,4,5].map(i => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => setRating(i)}
                   className={`px-3 py-2 rounded-lg border ${
                     rating === i
-                    ? "bg-[#8B5E3C] text-white"
-                    : "border-[#8B5E3C] text-[#8B5E3C]"
+                      ? "bg-[#8B5E3C] text-white"
+                      : "border-[#8B5E3C] text-[#8B5E3C]"
                   }`}
                 >
                   {i} ★
@@ -346,61 +349,44 @@ export default function BookDetails() {
               ))}
             </div>
 
-            {/* Comment */}
             <textarea
               rows="4"
               value={comment}
-              onChange={(e)=>setComment(e.target.value)}
+              onChange={(e) => setComment(e.target.value)}
               className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#8B5E3C]"
               placeholder="Write your review..."
               required
             />
 
-            <button
-              disabled={submitting}
-              className="bg-[#8B5E3C] text-white px-6 py-2 rounded-lg hover:bg-[#A47148]"
-            >
+            <button className="bg-[#8B5E3C] text-white px-6 py-2 rounded-lg hover:bg-[#A47148]">
               {submitting ? "Submitting..." : "Submit Review"}
             </button>
-
           </form>
         )}
-
       </motion.div>
 
-
-
       {/* REVIEWS */}
-
       <div className="bg-base-200 p-6 rounded-3xl shadow-lg">
-
-        <h2 className="text-xl font-bold text-[#8B5E3C] mb-4">
-          Reviews
-        </h2>
+        <h2 className="text-xl font-bold text-[#8B5E3C] mb-4">Reviews</h2>
 
         {reviewLoading ? (
           <span className="loading loading-spinner text-[#8B5E3C]"></span>
         ) : reviews.length === 0 ? (
           <p>No reviews yet.</p>
         ) : (
-
           <div className="space-y-4">
-
             {reviews.map((r) => (
-
               <motion.div
                 key={r._id}
-                initial={{ opacity:0, y:10 }}
-                animate={{ opacity:1, y:0 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 className="bg-base-100 p-4 rounded-xl border"
               >
-
                 <div className="flex items-center justify-between">
-
                   <div className="flex items-center gap-3">
-
                     <img
                       src={r.userPhoto || "https://i.ibb.co/2kRZpF0/user.png"}
+                      alt={r.userName || "User"}
                       className="w-10 h-10 rounded-full"
                     />
 
@@ -410,25 +396,19 @@ export default function BookDetails() {
                         {new Date(r.createdAt).toLocaleString()}
                       </p>
                     </div>
-
                   </div>
 
                   <div className="text-yellow-500 font-semibold">
                     {"★".repeat(r.rating)}
                   </div>
-
                 </div>
 
                 <p className="mt-3 text-gray-700">{r.comment}</p>
-
               </motion.div>
-
             ))}
-
           </div>
         )}
       </div>
-
     </div>
   );
 }

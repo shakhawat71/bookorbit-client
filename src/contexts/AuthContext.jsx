@@ -24,32 +24,27 @@ export default function AuthProvider({ children }) {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Register
   const createUser = (email, password) => {
     setLoading(true);
     return createUserWithEmailAndPassword(auth, email, password);
   };
 
-  // Login
   const loginUser = (email, password) => {
     setLoading(true);
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  // Google Login
   const googleLogin = () => {
     setLoading(true);
     return signInWithPopup(auth, googleProvider);
   };
 
-  // Logout
   const logoutUser = () => {
     localStorage.removeItem("access-token");
     setRole(null);
     return signOut(auth);
   };
 
-  // Update Profile
   const updateUserProfile = (name, photoURL) => {
     return updateProfile(auth.currentUser, {
       displayName: name,
@@ -57,16 +52,9 @@ export default function AuthProvider({ children }) {
     });
   };
 
-  // Observe Auth State
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-
-      if (currentUser) {
-        const token = await currentUser.getIdToken();
-        localStorage.setItem("access-token", token);
-
-        // ✅ Fetch role from backend
+    const fetchRoleWithRetry = async (token, retries = 3) => {
+      for (let i = 0; i < retries; i++) {
         try {
           const res = await axios.get(
             `${import.meta.env.VITE_API_URL}/users/role`,
@@ -77,8 +65,30 @@ export default function AuthProvider({ children }) {
             }
           );
 
-          setRole(res.data.role);
+          return res.data?.role || "user";
         } catch (error) {
+          if (i === retries - 1) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
+      }
+
+      return "user";
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true);
+      setUser(currentUser);
+
+      if (currentUser) {
+        try {
+          // force refresh token after register/login
+          const token = await currentUser.getIdToken(true);
+          localStorage.setItem("access-token", token);
+
+          const fetchedRole = await fetchRoleWithRetry(token, 3);
+          setRole(fetchedRole);
+        } catch (error) {
+          console.error("Role fetch error:", error);
           setRole("user");
         }
       } else {
