@@ -1,12 +1,10 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-unused-vars */
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import axiosSecure from "../hooks/useAxiosSecure";
 import { AuthContext } from "../contexts/AuthContext";
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import { CheckCircle2, XCircle, Heart } from "lucide-react";
 
 // ---------- Toast ----------
@@ -89,7 +87,7 @@ export default function BookDetails() {
   const [submitting, setSubmitting] = useState(false);
 
   // ---------- Fetch Book with retry ----------
-  const fetchBookWithRetry = async (retries = 3) => {
+  const fetchBookWithRetry = useCallback(async (retries = 3) => {
     for (let i = 0; i < retries; i++) {
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/books/${id}`);
@@ -117,10 +115,10 @@ export default function BookDetails() {
     }
 
     return false;
-  };
+  }, [id]);
 
   // ---------- Fetch Reviews ----------
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setReviewLoading(true);
 
@@ -135,10 +133,10 @@ export default function BookDetails() {
     } finally {
       setReviewLoading(false);
     }
-  };
+  }, [id]);
 
   // ---------- Check Review Eligibility ----------
-  const checkEligibility = async () => {
+  const checkEligibility = useCallback(async () => {
     if (!user) {
       setEligible(false);
       setEligibleReason("Login required to review.");
@@ -153,7 +151,7 @@ export default function BookDetails() {
       setEligible(false);
       setEligibleReason("Could not verify eligibility");
     }
-  };
+  }, [id, user]);
 
   useEffect(() => {
     let mounted = true;
@@ -180,11 +178,11 @@ export default function BookDetails() {
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [id, fetchBookWithRetry, fetchReviews]);
 
   useEffect(() => {
     checkEligibility();
-  }, [user, id]);
+  }, [checkEligibility]);
 
   // ---------- Wishlist ----------
   const handleAddWishlist = async () => {
@@ -261,7 +259,7 @@ export default function BookDetails() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-10">
       {/* BOOK DETAILS */}
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-base-200 rounded-3xl shadow-xl overflow-hidden"
@@ -269,7 +267,7 @@ export default function BookDetails() {
         <div className="grid md:grid-cols-2 gap-0">
           {/* IMAGE */}
           <div className="bg-base-100 p-8 flex items-center justify-center">
-            <motion.img
+            <Motion.img
               whileHover={{ scale: 1.05 }}
               src={book.image}
               alt={book.name}
@@ -296,15 +294,15 @@ export default function BookDetails() {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-              <motion.button
+              <Motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate(`/books/${book._id}/buy`)}
                 className="bg-[#8B5E3C] text-white py-2 rounded-lg hover:bg-[#A47148]"
               >
                 Buy Now
-              </motion.button>
+              </Motion.button>
 
-              <motion.button
+              <Motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleAddWishlist}
                 disabled={wishLoading}
@@ -312,14 +310,14 @@ export default function BookDetails() {
               >
                 <Heart size={16} />
                 {wishLoading ? "Adding..." : "Wishlist"}
-              </motion.button>
+              </Motion.button>
             </div>
           </div>
         </div>
-      </motion.div>
+      </Motion.div>
 
       {/* REVIEW FORM */}
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="bg-base-200 p-6 rounded-3xl shadow-lg"
@@ -363,7 +361,7 @@ export default function BookDetails() {
             </button>
           </form>
         )}
-      </motion.div>
+      </Motion.div>
 
       {/* REVIEWS */}
       <div className="bg-base-200 p-6 rounded-3xl shadow-lg">
@@ -376,7 +374,7 @@ export default function BookDetails() {
         ) : (
           <div className="space-y-4">
             {reviews.map((r) => (
-              <motion.div
+              <Motion.div
                 key={r._id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -404,7 +402,7 @@ export default function BookDetails() {
                 </div>
 
                 <p className="mt-3 text-gray-700">{r.comment}</p>
-              </motion.div>
+              </Motion.div>
             ))}
           </div>
         )}

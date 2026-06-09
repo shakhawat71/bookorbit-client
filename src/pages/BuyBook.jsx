@@ -1,10 +1,9 @@
-/* eslint-disable no-unused-vars */
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosSecure from "../hooks/useAxiosSecure";
 import { AuthContext } from "../contexts/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   XCircle,
@@ -98,7 +97,7 @@ function ConfirmModal({
     <AnimatePresence>
       {open ? (
         <>
-          <motion.button
+          <Motion.button
             type="button"
             onClick={onClose}
             className="fixed inset-0 bg-black/40 z-40"
@@ -108,7 +107,7 @@ function ConfirmModal({
             aria-label="Close overlay"
           />
 
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -162,7 +161,7 @@ function ConfirmModal({
             <div className="h-1 w-full bg-base-200">
               <div className="h-full w-full bg-[#8B5E3C]" />
             </div>
-          </motion.div>
+          </Motion.div>
         </>
       ) : null}
     </AnimatePresence>
@@ -205,8 +204,7 @@ export default function BuyBook() {
   // keep name updated if user loads late
   useEffect(() => {
     if (user?.displayName && !customerName) setCustomerName(user.displayName);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, customerName]);
 
   const validate = () => {
     if (!book?._id) return showToast.error("Book not found", "Please go back and try again.");
@@ -302,14 +300,14 @@ export default function BuyBook() {
         onConfirm={placeOrder}
       />
 
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28 }}
         className="grid lg:grid-cols-[1.1fr_.9fr] gap-6"
       >
         {/* LEFT: Summary Card */}
-        <motion.div
+        <Motion.div
           whileHover={{ y: -2 }}
           transition={{ type: "spring", stiffness: 220, damping: 18 }}
           className="bg-base-200 rounded-3xl shadow-xl overflow-hidden border border-base-300"
@@ -329,7 +327,7 @@ export default function BuyBook() {
 
           <div className="px-5 sm:px-6 pb-6">
             <div className="flex flex-col sm:flex-row gap-4">
-              <motion.img
+              <Motion.img
                 whileHover={{ scale: 1.04 }}
                 transition={{ type: "spring", stiffness: 220, damping: 16 }}
                 src={book.image}
@@ -372,10 +370,10 @@ export default function BuyBook() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </Motion.div>
 
         {/* RIGHT: Form Card */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, delay: 0.05 }}
@@ -448,7 +446,7 @@ export default function BuyBook() {
             </label>
 
             {/* Submit */}
-            <motion.button
+            <Motion.button
               whileTap={{ scale: 0.98 }}
               disabled={placing}
               type="submit"
@@ -462,14 +460,14 @@ export default function BuyBook() {
               ) : (
                 "Confirm Order"
               )}
-            </motion.button>
+              </Motion.button>
 
             <div className="text-xs text-base-content/60 text-center pt-1">
               By confirming, you agree to our order policy.
             </div>
           </form>
-        </motion.div>
-      </motion.div>
+        </Motion.div>
+      </Motion.div>
 
       {/* toast animations */}
       <style>{`

@@ -1,8 +1,7 @@
-/* eslint-disable no-unused-vars */
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion as Motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Search, ArrowRight } from "lucide-react";
 
 const fadeUp = {
@@ -34,6 +33,8 @@ export default function AllBooks() {
   let mounted = true;
 
   const fetchBooksWithRetry = async (retries = 3) => {
+    if (mounted) setLoading(true);
+
     for (let i = 0; i < retries; i++) {
       try {
         const res = await axios.get(
@@ -45,7 +46,7 @@ export default function AllBooks() {
           setLoading(false);
         }
         return;
-      } catch (error) {
+      } catch {
         if (i === retries - 1) {
           if (mounted) {
             setBooks([]);
@@ -59,7 +60,6 @@ export default function AllBooks() {
     }
   };
 
-  setLoading(true);
   fetchBooksWithRetry();
 
   return () => {
@@ -111,21 +111,21 @@ export default function AllBooks() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
       {/* Header */}
-      <motion.div
+      <Motion.div
         initial="hidden"
         animate="show"
         variants={stagger}
         className="flex flex-col md:flex-row md:items-end md:justify-between gap-4"
       >
-        <motion.div variants={fadeUp}>
+        <Motion.div variants={fadeUp}>
           <h2 className="text-3xl font-bold text-[#8B5E3C]">All Books</h2>
           <p className="mt-2 text-base-content/70">
             Browse published books and explore details.
           </p>
-        </motion.div>
+        </Motion.div>
 
         {/* Search + Sort */}
-        <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3">
+        <Motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3">
           <label className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50">
               <Search size={18} />
@@ -148,13 +148,13 @@ export default function AllBooks() {
             <option value="price_low">Price (Low → High)</option>
             <option value="price_high">Price (High → Low)</option>
           </select>
-        </motion.div>
-      </motion.div>
+        </Motion.div>
+      </Motion.div>
 
       {/* Content */}
       <AnimatePresence mode="popLayout">
         {filteredBooks.length === 0 ? (
-          <motion.p
+          <Motion.p
             key="empty"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -162,9 +162,9 @@ export default function AllBooks() {
             className="mt-10 text-base-content/60"
           >
             No books found.
-          </motion.p>
+          </Motion.p>
         ) : (
-          <motion.div
+          <Motion.div
             key="grid"
             initial="hidden"
             animate="show"
@@ -172,7 +172,7 @@ export default function AllBooks() {
             className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {filteredBooks.map((book) => (
-              <motion.div
+              <Motion.div
                 key={book._id}
                 variants={{
                   hidden: { opacity: 0, y: 18, scale: 0.99 },
@@ -191,7 +191,7 @@ export default function AllBooks() {
                 className="bg-base-200 rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition"
               >
                 <div className="relative overflow-hidden">
-                  <motion.img
+                  <Motion.img
                     src={book.image}
                     alt={book.name}
                     className="h-56 w-full object-cover"
@@ -217,9 +217,9 @@ export default function AllBooks() {
                     </Link>
                   </div>
                 </div>
-              </motion.div>
+              </Motion.div>
             ))}
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
     </div>

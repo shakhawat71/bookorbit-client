@@ -17,6 +17,186 @@ import {
 } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 
+function ActiveIndicator({ isActive }) {
+  return (
+    <span
+      className={`absolute left-1 top-1/2 -translate-y-1/2 h-8 w-1 rounded-full transition-all ${
+        isActive ? "bg-white" : "bg-transparent group-hover:bg-white/40"
+      }`}
+    />
+  );
+}
+
+function MenuLink({ to, icon, label, linkClass, closeMobile, isOpen }) {
+  return (
+    <NavLink to={to} className={linkClass} onClick={closeMobile}>
+      {({ isActive }) => (
+        <>
+          <ActiveIndicator isActive={isActive} />
+          <span className="p-2 rounded-lg bg-white/10">{icon}</span>
+
+          <span
+            className={`transition-all duration-300 whitespace-nowrap ${
+              isOpen
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 -translate-x-2 w-0 overflow-hidden"
+            }`}
+          >
+            {label}
+          </span>
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+function SidebarContent({ role, isOpen, closeMobile, linkClass, toggleIsOpen }) {
+  return (
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <span className="grid place-items-center h-10 w-10 rounded-xl bg-white/10 shadow-inner">
+            <LayoutDashboard className="text-white" size={18} />
+          </span>
+
+          <div
+            className={`transition-all duration-300 ${
+              isOpen ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+            }`}
+          >
+            <h2 className="font-bold text-white text-lg">Dashboard</h2>
+            <p className="text-xs text-white/70">BookOrbit Panel</p>
+          </div>
+        </div>
+
+        <button onClick={toggleIsOpen} className="hidden md:inline-flex text-white">
+          <Menu size={20} />
+        </button>
+
+        <button onClick={closeMobile} className="md:hidden text-white">
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="h-px bg-white/20 mb-5" />
+
+      {/* ================= MENU ================= */}
+      <ul className="space-y-2">
+
+        {/* USER MENU */}
+        {(role === "user" || role === "librarian" || role === "admin") && (
+          <>
+            <li>
+              <MenuLink
+                to="/dashboard/my-orders"
+                icon={<Package size={18} className="text-white" />}
+                label="My Orders"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
+            <li>
+              <MenuLink
+                to="/dashboard/my-profile"
+                icon={<User size={18} className="text-white" />}
+                label="My Profile"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
+            <li>
+              <MenuLink
+                to="/dashboard/invoices"
+                icon={<FileText size={18} className="text-white" />}
+                label="Invoices"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
+            <li>
+              <MenuLink
+                to="/dashboard/wishlist"
+                icon={<Heart size={18} className="text-white" />}
+                label="My Wishlist"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
+          </>
+        )}
+
+        {/* LIBRARIAN MENU */}
+        {(role === "librarian" || role === "admin") && (
+          <>
+            <li>
+              <MenuLink
+                to="/dashboard/add-book"
+                icon={<Plus size={18} className="text-white" />}
+                label="Add Book"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
+            <li>
+              <MenuLink
+                to="/dashboard/my-books"
+                icon={<BookOpen size={18} className="text-white" />}
+                label="My Books"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
+            <li>
+              <MenuLink
+                to="/dashboard/orders"
+                icon={<Truck size={18} className="text-white" />}
+                label="Orders"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
+          </>
+        )}
+
+        {/* ADMIN MENU */}
+        {role === "admin" && (
+          <>
+            <li>
+              <MenuLink
+                to="/dashboard/all-users"
+                icon={<Users size={18} className="text-white" />}
+                label="All Users"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
+            <li>
+              <MenuLink
+                to="/dashboard/manage-books"
+                icon={<Settings size={18} className="text-white" />}
+                label="Manage Books"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
+          </>
+        )}
+      </ul>
+    </>
+  );
+}
+
+
 export default function DashboardLayout() {
   const [isOpen, setIsOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -54,165 +234,6 @@ export default function DashboardLayout() {
         : "text-white/80 hover:text-white hover:bg-white/10",
     ].join(" ");
 
-  const ActiveIndicator = ({ isActive }) => (
-    <span
-      className={`absolute left-1 top-1/2 -translate-y-1/2 h-8 w-1 rounded-full transition-all ${
-        isActive ? "bg-white" : "bg-transparent group-hover:bg-white/40"
-      }`}
-    />
-  );
-
-  const MenuLink = ({ to, icon, label }) => (
-    <NavLink to={to} className={linkClass} onClick={closeMobile}>
-      {({ isActive }) => (
-        <>
-          <ActiveIndicator isActive={isActive} />
-          <span className="p-2 rounded-lg bg-white/10">
-            {icon}
-          </span>
-
-          <span
-            className={`transition-all duration-300 whitespace-nowrap ${
-              isOpen
-                ? "opacity-100 translate-x-0"
-                : "opacity-0 -translate-x-2 w-0 overflow-hidden"
-            }`}
-          >
-            {label}
-          </span>
-        </>
-      )}
-    </NavLink>
-  );
-
-  const SidebarContent = () => (
-    <>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <span className="grid place-items-center h-10 w-10 rounded-xl bg-white/10 shadow-inner">
-            <LayoutDashboard className="text-white" size={18} />
-          </span>
-
-          <div
-            className={`transition-all duration-300 ${
-              isOpen ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
-            }`}
-          >
-            <h2 className="font-bold text-white text-lg">
-              Dashboard
-            </h2>
-            <p className="text-xs text-white/70">
-              BookOrbit Panel
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setIsOpen((v) => !v)}
-          className="hidden md:inline-flex text-white"
-        >
-          <Menu size={20} />
-        </button>
-
-        <button
-          onClick={closeMobile}
-          className="md:hidden text-white"
-        >
-          <X size={20} />
-        </button>
-      </div>
-
-      <div className="h-px bg-white/20 mb-5" />
-
-      {/* ================= MENU ================= */}
-      <ul className="space-y-2">
-
-        {/* USER MENU */}
-        {(role === "user" ||
-          role === "librarian" ||
-          role === "admin") && (
-          <>
-            <li>
-              <MenuLink
-                to="/dashboard/my-orders"
-                icon={<Package size={18} className="text-white" />}
-                label="My Orders"
-              />
-            </li>
-            <li>
-              <MenuLink
-                to="/dashboard/my-profile"
-                icon={<User size={18} className="text-white" />}
-                label="My Profile"
-              />
-            </li>
-            <li>
-              <MenuLink
-                to="/dashboard/invoices"
-                icon={<FileText size={18} className="text-white" />}
-                label="Invoices"
-              />
-            </li>
-            <li>
-              <MenuLink
-                to="/dashboard/wishlist"
-                icon={<Heart size={18} className="text-white" />}
-                label="My Wishlist"
-              />
-            </li>
-          </>
-        )}
-
-        {/* LIBRARIAN MENU */}
-        {(role === "librarian" || role === "admin") && (
-          <>
-            <li>
-              <MenuLink
-                to="/dashboard/add-book"
-                icon={<Plus size={18} className="text-white" />}
-                label="Add Book"
-              />
-            </li>
-            <li>
-              <MenuLink
-                to="/dashboard/my-books"
-                icon={<BookOpen size={18} className="text-white" />}
-                label="My Books"
-              />
-            </li>
-            <li>
-              <MenuLink
-                to="/dashboard/orders"
-                icon={<Truck size={18} className="text-white" />}
-                label="Orders"
-              />
-            </li>
-          </>
-        )}
-
-        {/* ADMIN MENU */}
-        {role === "admin" && (
-          <>
-            <li>
-              <MenuLink
-                to="/dashboard/all-users"
-                icon={<Users size={18} className="text-white" />}
-                label="All Users"
-              />
-            </li>
-            <li>
-              <MenuLink
-                to="/dashboard/manage-books"
-                icon={<Settings size={18} className="text-white" />}
-                label="Manage Books"
-              />
-            </li>
-          </>
-        )}
-      </ul>
-    </>
-  );
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -237,7 +258,13 @@ export default function DashboardLayout() {
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
-          <SidebarContent />
+          <SidebarContent
+            role={role}
+            isOpen={isOpen}
+            closeMobile={closeMobile}
+            linkClass={linkClass}
+            toggleIsOpen={() => setIsOpen((v) => !v)}
+          />
         </aside>
 
         {/* Main content */}
