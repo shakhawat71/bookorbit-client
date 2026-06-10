@@ -204,7 +204,7 @@ export default function AllBooks() {
 
                 <div className="p-4">
                   <h3 className="font-bold text-lg">{book.name}</h3>
-                  <p className="text-sm text-base-content/60">{book.author}</p>
+                  <p className="text-sm font-semibold text-base-content/60">{book.author}</p>
 
                   <div className="mt-2 flex items-center justify-between">
                     <p className="font-semibold text-[#8B5E3C]">৳ {book.price}</p>

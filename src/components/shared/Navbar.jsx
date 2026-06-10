@@ -208,17 +208,17 @@ export default function Navbar() {
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow"
             >
               <li>
-                <span className="font-semibold">
+                <span className="font-semibold hover:bg-[#A47148] hover:text-white">
                   {user?.displayName || "User"}
                 </span>
               </li>
               <li>
-                <Link to="/dashboard/my-profile">
+                <Link className="hover:bg-[#A47148] hover:text-white" to="/dashboard/my-profile">
                   My Profile
                 </Link>
               </li>
               <li>
-                <button onClick={handleLogout}>
+                <button className="hover:bg-[#A47148] hover:text-white" onClick={handleLogout}>
                   Logout
                 </button>
               </li>

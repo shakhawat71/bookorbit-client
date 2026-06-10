@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
@@ -81,7 +80,7 @@ export default function Home() {
             setLoading(false);
           }
           return;
-        } catch (error) {
+        } catch {
           if (i === retries - 1) {
             if (mounted) {
               setBooks([]);
@@ -94,7 +93,6 @@ export default function Home() {
       }
     };
 
-    setLoading(true);
     fetchBooksWithRetry();
 
     return () => {
@@ -446,7 +444,7 @@ export default function Home() {
 
                 <div className="p-5">
                   <h3 className="text-lg font-bold">{b.name}</h3>
-                  <p className="text-sm text-base-content/60">{b.author}</p>
+                  <p className="text-sm font-semibold text-base-content/60">{b.author}</p>
                   <p className="mt-3 text-sm text-base-content/70">
                     {truncate(b.description, 110)}
                   </p>
