@@ -6,6 +6,7 @@ import Coverage from "../components/home/Coverage";
 import Features from "../components/home/Features";
 import ReaderReviews from "../components/home/ReaderReviews";
 import FAQs from "../components/home/FAQs";
+import Services from "../components/home/Services";
 
 const shuffle = (arr) => {
   const a = [...arr];
@@ -116,6 +117,7 @@ export default function Home() {
       <LatestBooks books={books} />
       <Coverage />
       <Features />
+      <Services />
       <ReaderReviews reviews={reviews} reviewsLoading={reviewsLoading} />
       <FAQs />
     </div>
