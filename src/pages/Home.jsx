@@ -167,12 +167,12 @@ export default function Home() {
       <section className="relative overflow-hidden">
         <motion.div
           aria-hidden="true"
-          className="absolute -top-28 -left-28 h-96 w-96 rounded-full bg-[#8B5E3C] opacity-12 blur-3xl"
+          className="absolute -top-28 -left-28 h-96 w-96 rounded-full opacity-12 blur-3xl"
           {...softFloat(prefersReducedMotion)}
         />
         <motion.div
           aria-hidden="true"
-          className="absolute -bottom-28 -right-28 h-96 w-96 rounded-full bg-[#A47148] opacity-12 blur-3xl"
+          className="absolute -bottom-28 -right-28 h-96 w-96 rounded-full opacity-12 blur-3xl"
           animate={prefersReducedMotion ? {} : { y: [0, 10, 0], x: [0, -8, 0] }}
           transition={
             prefersReducedMotion
@@ -196,7 +196,7 @@ export default function Home() {
             <motion.div variants={stagger} initial="hidden" animate="show">
               <motion.div
                 variants={fadeUp}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8B5E3C]/10 text-[#8B5E3C] text-sm font-medium"
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8B5E3C]/30 text-[#8B5E3C] text-sm font-medium"
               >
                 <Star size={16} />
                 Fast library-to-home delivery
@@ -406,7 +406,7 @@ export default function Home() {
             whileInView="show"
             viewport={{ once: true, amount: 0.15 }}
             variants={stagger}
-            className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="mt-8 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"
           >
             {latestBooks.map((b) => (
               <motion.div
