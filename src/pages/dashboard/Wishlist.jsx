@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Trash2, Search, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
-// ----------  toast ----------
 const showToast = {
   success: (title, desc) =>
     toast.custom(
@@ -74,14 +73,29 @@ const showToast = {
 
 const safeText = (v) => String(v || "").toLowerCase();
 
+function WishlistSkeleton() {
+  return (
+    <div className="grid md:grid-cols-2 gap-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="bg-base-100 rounded-2xl p-4 flex gap-4 animate-pulse">
+          <div className="w-20 h-28 rounded-xl bg-base-300"></div>
+          <div className="flex-1 space-y-2">
+            <div className="h-5 bg-base-300 rounded w-3/4"></div>
+            <div className="h-4 bg-base-300 rounded w-1/2"></div>
+            <div className="h-5 bg-base-300 rounded w-1/4 mt-2"></div>
+            <div className="h-8 bg-base-300 rounded w-24 mt-3"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Wishlist() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
-
-  // search filter (mobile friendly)
   const [q, setQ] = useState("");
-
   const navigate = useNavigate();
 
   const loadWishlist = async () => {
@@ -89,7 +103,6 @@ export default function Wishlist() {
       setLoading(true);
       const res = await axiosSecure.get("/wishlist/my");
       setItems(res.data || []);
-      // showToast.success("Wishlist updated", "Latest wishlist items loaded.");
     } catch (err) {
       console.log(err);
       showToast.error("Failed to load wishlist", "Please try again.");
@@ -127,15 +140,24 @@ export default function Wishlist() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <span className="loading loading-spinner text-[#8B5E3C]"></span>
+      <div className="bg-base-200 p-4 sm:p-6 rounded-2xl shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
+          <div>
+            <div className="h-8 bg-base-300 rounded w-32 animate-pulse"></div>
+            <div className="h-4 bg-base-300 rounded w-48 mt-2 animate-pulse"></div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-3 sm:mt-0">
+            <div className="h-10 bg-base-300 rounded-xl w-48 animate-pulse"></div>
+            <div className="h-10 bg-base-300 rounded-xl w-24 animate-pulse"></div>
+          </div>
+        </div>
+        <WishlistSkeleton />
       </div>
     );
   }
 
   return (
     <div className="bg-base-200 p-4 sm:p-6 rounded-2xl shadow-lg">
-      {/* header */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -153,12 +175,8 @@ export default function Wishlist() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* search */}
           <div className="relative flex-1 sm:flex-none min-w-55">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50"
-            />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -166,7 +184,6 @@ export default function Wishlist() {
               className="w-full pl-9 pr-3 py-2 rounded-xl border bg-base-100 focus:outline-none focus:ring-2 focus:ring-[#8B5E3C]"
             />
           </div>
-
           <button
             onClick={loadWishlist}
             className="btn btn-sm bg-[#8B5E3C] text-white hover:bg-[#A47148] border-0"
@@ -177,34 +194,43 @@ export default function Wishlist() {
         </div>
       </motion.div>
 
-      {/* empty */}
       {filteredItems.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-base-100 rounded-2xl p-6 text-base-content/60"
+          className="bg-base-100 rounded-2xl p-6 text-center"
         >
           {q ? (
-            <p>
-              No results for <span className="font-semibold">“{q}”</span>.
+            <p className="text-base-content/60">
+              No results for <span className="font-semibold">"{q}"</span>.
             </p>
           ) : (
-            <p>No wishlist items yet.</p>
+            <div>
+              <div className="w-20 h-20 mx-auto mb-4 bg-base-200 rounded-full flex items-center justify-center">
+                <Heart size={40} className="text-base-content/30" />
+              </div>
+              <p className="text-base-content/60">No wishlist items yet.</p>
+              <button
+                onClick={() => navigate("/books")}
+                className="mt-4 btn btn-sm bg-[#8B5E3C] text-white hover:bg-[#A47148] border-0"
+              >
+                Browse Books
+              </button>
+            </div>
           )}
         </motion.div>
       ) : (
         <>
-          {/*  Desktop grid */}
           <div className="hidden md:grid md:grid-cols-2 gap-4">
             <AnimatePresence>
-              {filteredItems.map((w) => (
+              {filteredItems.map((w, idx) => (
                 <motion.div
                   key={w._id}
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.25 }}
+                  transition={{ duration: 0.25, delay: idx * 0.03 }}
                   className="bg-base-100 rounded-2xl p-4 flex gap-4 shadow hover:shadow-xl transition cursor-pointer"
                   onClick={() => navigate(`/books/${w.bookId}`)}
                   whileHover={{ y: -3 }}
@@ -215,13 +241,10 @@ export default function Wishlist() {
                     className="w-20 h-28 object-cover rounded-xl"
                     loading="lazy"
                   />
-
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold truncate">{w.bookName}</h3>
                     <p className="text-sm text-base-content/60 truncate">{w.bookAuthor}</p>
-
                     <p className="mt-1 font-semibold text-[#8B5E3C]">৳ {w.price}</p>
-
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -239,17 +262,16 @@ export default function Wishlist() {
             </AnimatePresence>
           </div>
 
-          {/* Mobile list (cards) */}
           <div className="md:hidden space-y-3">
             <AnimatePresence>
-              {filteredItems.map((w) => (
+              {filteredItems.map((w, idx) => (
                 <motion.div
                   key={w._id}
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.25 }}
+                  transition={{ duration: 0.25, delay: idx * 0.03 }}
                   className="bg-base-100 rounded-2xl p-4 shadow-sm border border-base-200"
                 >
                   <div
@@ -262,18 +284,15 @@ export default function Wishlist() {
                       className="w-16 h-20 rounded-xl object-cover"
                       loading="lazy"
                     />
-
                     <div className="flex-1 min-w-0">
                       <p className="font-bold truncate">{w.bookName}</p>
                       <p className="text-xs text-base-content/60 truncate">{w.bookAuthor}</p>
-
                       <div className="mt-2 flex items-center justify-between">
                         <span className="font-semibold text-[#8B5E3C]">৳ {w.price}</span>
                         <span className="text-xs text-base-content/50">Tap to open</span>
                       </div>
                     </div>
                   </div>
-
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -292,7 +311,6 @@ export default function Wishlist() {
         </>
       )}
 
-      {/* toast animations */}
       <style>{`
         @keyframes toastbar {
           from { transform: translateX(-100%); }

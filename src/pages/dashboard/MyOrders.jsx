@@ -9,6 +9,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { OrderSkeleton } from "../../components/ui/Skeleton";
 
 // ---------- Pretty toast helpers ----------
 const showToast = {
@@ -77,18 +78,24 @@ const showToast = {
     ),
 };
 
+// FIXED: Safe date formatting
 const formatDateTime = (d) => {
+  if (!d) return "—";
   try {
-    return new Date(d).toLocaleString();
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleString();
   } catch {
     return "—";
   }
 };
 
-// YYYY-MM-DD from Date
+// YYYY-MM-DD from Date - FIXED
 const toYMD = (d) => {
+  if (!d) return "";
   try {
     const dt = new Date(d);
+    if (isNaN(dt.getTime())) return "";
     const y = dt.getFullYear();
     const m = String(dt.getMonth() + 1).padStart(2, "0");
     const day = String(dt.getDate()).padStart(2, "0");
@@ -108,73 +115,62 @@ const StatusPill = ({ value }) => {
       ? "bg-red-100 text-red-700"
       : "bg-gray-100 text-gray-700";
 
-  return <span className={`px-3 py-1 rounded-full text-sm font-medium ${cls}`}>{value}</span>;
+  return <span className={`px-3 py-1 rounded-full text-sm font-medium ${cls}`}>{value || "pending"}</span>;
 };
 
 const PaymentPill = ({ value }) => {
   const cls = value === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700";
-  return <span className={`px-3 py-1 rounded-full text-sm font-medium ${cls}`}>{value}</span>;
+  return <span className={`px-3 py-1 rounded-full text-sm font-medium ${cls}`}>{value || "unpaid"}</span>;
 };
 
-//  Smooth confirm modal
+// Smooth confirm modal
 function ConfirmModal({ open, title, message, confirmText, cancelText, tone = "danger", onConfirm, onClose }) {
+  if (!open) return null;
+  
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.button
-            type="button"
+    <div className="fixed inset-0 z-50">
+      <button className="absolute inset-0 bg-black/40" onClick={onClose} aria-label="Close" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vw] max-w-md bg-base-100 rounded-2xl shadow-2xl p-5"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-bold text-[#8B5E3C] text-lg">{title}</p>
+            <p className="text-sm text-base-content/70 mt-1">{message}</p>
+          </div>
+          <button
+            className="h-9 w-9 rounded-xl hover:bg-base-200 grid place-items-center"
             onClick={onClose}
-            className="fixed inset-0 bg-black/40 z-40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            aria-label="Close overlay"
-          />
-          <motion.div
-            initial={{ opacity: 0, y: 18, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.98 }}
-            transition={{ duration: 0.22 }}
-            className="fixed z-50 left-1/2 -translate-x-1/2 top-24 w-[92vw] max-w-md bg-base-100 rounded-2xl shadow-2xl p-4 border"
+            aria-label="Close"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-bold text-[#8B5E3C] text-lg">{title}</p>
-                <p className="text-sm text-base-content/70 mt-1">{message}</p>
-              </div>
-              <button
-                className="h-9 w-9 rounded-xl hover:bg-base-200 grid place-items-center"
-                onClick={onClose}
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
+            ✕
+          </button>
+        </div>
 
-            <div className="mt-4 flex gap-2">
-              <button
-                className={`btn flex-1 border-0 text-white ${
-                  tone === "success"
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "bg-red-600 hover:bg-red-700"
-                }`}
-                onClick={onConfirm}
-              >
-                {confirmText}
-              </button>
+        <div className="mt-4 flex gap-2">
+          <button
+            className={`btn flex-1 border-0 text-white ${
+              tone === "success"
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-red-600 hover:bg-red-700"
+            }`}
+            onClick={onConfirm}
+          >
+            {confirmText}
+          </button>
 
-              <button
-                className="btn flex-1 btn-outline border-[#8B5E3C] text-[#8B5E3C] hover:bg-[#8B5E3C] hover:text-white"
-                onClick={onClose}
-              >
-                {cancelText}
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          <button
+            className="btn flex-1 btn-outline border-[#8B5E3C] text-[#8B5E3C] hover:bg-[#8B5E3C] hover:text-white"
+            onClick={onClose}
+          >
+            {cancelText}
+          </button>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
@@ -257,10 +253,21 @@ export default function MyOrders() {
     }
   };
 
+  // Show skeleton while loading
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <span className="loading loading-spinner text-[#8B5E3C]"></span>
+      <div className="bg-base-200 p-4 sm:p-6 rounded-2xl shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
+          <div>
+            <div className="h-8 bg-base-300 rounded w-32 animate-pulse"></div>
+            <div className="h-4 bg-base-300 rounded w-48 mt-2 animate-pulse"></div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-3 sm:mt-0">
+            <div className="h-10 bg-base-300 rounded-xl w-48 animate-pulse"></div>
+            <div className="h-10 bg-base-300 rounded-xl w-24 animate-pulse"></div>
+          </div>
+        </div>
+        <OrderSkeleton count={3} />
       </div>
     );
   }
@@ -404,19 +411,30 @@ export default function MyOrders() {
         )}
       </AnimatePresence>
 
+      {/* Results count */}
+      {filteredOrders.length > 0 && (
+        <div className="mb-3 text-sm text-base-content/50">
+          Showing {filteredOrders.length} order{filteredOrders.length !== 1 ? "s" : ""}
+          {selectedDate && ` for ${selectedDate}`}
+        </div>
+      )}
+
       {/* empty */}
       {filteredOrders.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-base-content/60 bg-base-100 rounded-2xl p-6"
+          className="text-base-content/60 bg-base-100 rounded-2xl p-6 text-center"
         >
           {selectedDate ? (
             <p>
               No orders found on <span className="font-semibold">{selectedDate}</span>.
             </p>
           ) : (
-            <p>No orders found.</p>
+            <div>
+              <p>No orders found.</p>
+              <p className="text-sm mt-2">Browse books and place your first order!</p>
+            </div>
           )}
         </motion.div>
       ) : (
@@ -435,24 +453,16 @@ export default function MyOrders() {
                 </tr>
               </thead>
 
-              <motion.tbody
-                initial="hidden"
-                animate="show"
-                variants={{
-                  hidden: {},
-                  show: { transition: { staggerChildren: 0.05 } },
-                }}
-              >
-                {filteredOrders.map((o) => (
+              <tbody>
+                {filteredOrders.map((o, idx) => (
                   <motion.tr
                     key={o._id}
-                    variants={{
-                      hidden: { opacity: 0, y: 10 },
-                      show: { opacity: 1, y: 0, transition: { duration: 0.25 } },
-                    }}
-                    className="hover"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: idx * 0.02 }}
+                    className="border-b border-base-200 hover:bg-base-100/50"
                   >
-                    <td>
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <img
                           src={o.bookImage}
@@ -465,58 +475,58 @@ export default function MyOrders() {
                         </div>
                       </div>
                     </td>
-
                     <td className="font-semibold text-[#8B5E3C]">৳ {o.price ?? 0}</td>
                     <td><StatusPill value={o.status} /></td>
                     <td><PaymentPill value={o.paymentStatus} /></td>
                     <td className="text-sm">{formatDateTime(o.orderDate)}</td>
+                    <td className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {o.paymentStatus !== "paid" && o.status !== "cancelled" && (
+                          <button
+                            onClick={() => askPay(o._id)}
+                            disabled={actionId === o._id}
+                            className="btn btn-sm bg-green-600 text-white hover:bg-green-700 border-0"
+                          >
+                            <CreditCard size={16} className="mr-1" />
+                            {actionId === o._id ? "..." : "Pay"}
+                          </button>
+                        )}
 
-                    <td className="text-center space-x-2">
-                      {o.paymentStatus !== "paid" && o.status !== "cancelled" && (
-                        <button
-                          onClick={() => askPay(o._id)}
-                          disabled={actionId === o._id}
-                          className="btn btn-sm bg-green-600 text-white hover:bg-green-700 border-0"
-                        >
-                          <CreditCard size={16} className="mr-2" />
-                          {actionId === o._id ? "Processing..." : "Pay"}
-                        </button>
-                      )}
+                        {o.status === "pending" && o.paymentStatus !== "paid" && (
+                          <button
+                            onClick={() => askCancel(o._id)}
+                            disabled={actionId === o._id}
+                            className="btn btn-sm bg-red-600 text-white hover:bg-red-700 border-0"
+                          >
+                            <XCircle size={16} className="mr-1" />
+                            {actionId === o._id ? "..." : "Cancel"}
+                          </button>
+                        )}
 
-                      {o.status === "pending" && o.paymentStatus !== "paid" && (
-                        <button
-                          onClick={() => askCancel(o._id)}
-                          disabled={actionId === o._id}
-                          className="btn btn-sm bg-red-600 text-white hover:bg-red-700 border-0"
-                        >
-                          <XCircle size={16} className="mr-2" />
-                          {actionId === o._id ? "Please wait..." : "Cancel"}
-                        </button>
-                      )}
-
-                      {o.paymentStatus === "paid" && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700">
-                          <CheckCircle2 size={14} /> Paid
-                        </span>
-                      )}
+                        {o.paymentStatus === "paid" && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700">
+                            <CheckCircle2 size={14} /> Paid
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </motion.tr>
                 ))}
-              </motion.tbody>
+              </tbody>
             </table>
           </div>
 
           {/* Mobile cards */}
           <div className="lg:hidden space-y-3">
             <AnimatePresence>
-              {filteredOrders.map((o) => (
+              {filteredOrders.map((o, idx) => (
                 <motion.div
                   key={o._id}
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.25 }}
+                  transition={{ duration: 0.25, delay: idx * 0.02 }}
                   className="bg-base-100 rounded-2xl p-4 shadow-sm border border-base-200"
                 >
                   <div className="flex gap-3">
@@ -542,7 +552,7 @@ export default function MyOrders() {
                         disabled={actionId === o._id}
                         className="btn btn-sm flex-1 bg-green-600 text-white hover:bg-green-700 border-0"
                       >
-                        <CreditCard size={16} className="mr-2" />
+                        <CreditCard size={16} className="mr-1" />
                         {actionId === o._id ? "Processing..." : "Pay"}
                       </button>
                     )}
@@ -553,13 +563,13 @@ export default function MyOrders() {
                         disabled={actionId === o._id}
                         className="btn btn-sm flex-1 bg-red-600 text-white hover:bg-red-700 border-0"
                       >
-                        <XCircle size={16} className="mr-2" />
-                        {actionId === o._id ? "Please wait..." : "Cancel"}
+                        <XCircle size={16} className="mr-1" />
+                        {actionId === o._id ? "Processing..." : "Cancel"}
                       </button>
                     )}
 
                     {o.paymentStatus === "paid" && (
-                      <div className="flex-1 rounded-xl bg-green-50 text-green-700 px-3 py-2 text-sm font-semibold inline-flex items-center gap-2">
+                      <div className="flex-1 rounded-xl bg-green-50 text-green-700 px-3 py-2 text-sm font-semibold inline-flex items-center gap-2 justify-center">
                         <CheckCircle2 size={16} />
                         Paid ✅
                       </div>

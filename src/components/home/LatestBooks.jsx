@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { BooksGridSkeleton } from "../ui/Skeleton";
 
 const truncate = (text = "", max = 120) => {
   const t = String(text || "").replace(/\s+/g, " ").trim();
@@ -23,9 +24,25 @@ const stagger = {
   show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
 };
 
-export default function LatestBooks({ books }) {
+export default function LatestBooks({ books, loading }) {
   const prefersReducedMotion = useReducedMotion();
-  const latestBooks = books.slice(0, 8);
+  const latestBooks = books?.slice(0, 8) || [];
+
+  // Show skeleton while loading
+  if (loading) {
+    return (
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        <div className="flex items-end justify-between gap-4 mb-8">
+          <div>
+            <div className="h-8 bg-base-300 rounded w-32 animate-pulse"></div>
+            <div className="h-4 bg-base-300 rounded w-48 mt-2 animate-pulse"></div>
+          </div>
+          <div className="h-10 bg-base-300 rounded w-24 animate-pulse"></div>
+        </div>
+        <BooksGridSkeleton count={8} />
+      </section>
+    );
+  }
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-12">
@@ -53,7 +70,7 @@ export default function LatestBooks({ books }) {
         </motion.div>
       </motion.div>
 
-      {latestBooks?.length ? (
+      {latestBooks.length > 0 ? (
         <>
           {/* Desktop & iPad: Show all 8 books (2 rows of 4 columns) */}
           <motion.div
@@ -98,9 +115,9 @@ export default function LatestBooks({ books }) {
                 </div>
 
                 <div className="p-5">
-                  <h3 className="text-lg font-bold">{b.name}</h3>
+                  <h3 className="text-lg font-bold line-clamp-1">{b.name}</h3>
                   <p className="text-sm font-semibold text-base-content/60">{b.author}</p>
-                  <p className="mt-3 text-sm text-base-content/70">
+                  <p className="mt-3 text-sm text-base-content/70 line-clamp-2">
                     {truncate(b.description, 110)}
                   </p>
 
@@ -182,7 +199,13 @@ export default function LatestBooks({ books }) {
           </motion.div>
         </>
       ) : (
-        <p className="mt-6 text-base-content/60">No books found.</p>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8 text-center py-12 bg-base-200 rounded-2xl"
+        >
+          <p className="text-base-content/60">No books found.</p>
+        </motion.div>
       )}
     </section>
   );

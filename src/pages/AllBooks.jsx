@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { motion as Motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Search, ArrowRight } from "lucide-react";
+import { BooksGridSkeleton, LoadingSpinner } from "../components/ui/Skeleton";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12, filter: "blur(6px)" },
@@ -30,42 +31,42 @@ export default function AllBooks() {
   const [sort, setSort] = useState("newest"); // newest | price_low | price_high | name
 
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
-  const fetchBooksWithRetry = async (retries = 3) => {
-    if (mounted) setLoading(true);
+    const fetchBooksWithRetry = async (retries = 3) => {
+      if (mounted) setLoading(true);
 
-    for (let i = 0; i < retries; i++) {
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_URL}/books?status=published`
-        );
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await axios.get(
+            `${import.meta.env.VITE_API_URL}/books?status=published`
+          );
 
-        if (mounted) {
-          setBooks(res.data || []);
-          setLoading(false);
-        }
-        return;
-      } catch {
-        if (i === retries - 1) {
           if (mounted) {
-            setBooks([]);
+            setBooks(res.data || []);
             setLoading(false);
           }
           return;
+        } catch {
+          if (i === retries - 1) {
+            if (mounted) {
+              setBooks([]);
+              setLoading(false);
+            }
+            return;
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 700));
         }
-
-        await new Promise((resolve) => setTimeout(resolve, 700));
       }
-    }
-  };
+    };
 
-  fetchBooksWithRetry();
+    fetchBooksWithRetry();
 
-  return () => {
-    mounted = false;
-  };
-}, []);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filteredBooks = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -100,10 +101,21 @@ export default function AllBooks() {
     return list;
   }, [books, query, sort]);
 
+  // Show skeleton while loading
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <span className="loading loading-spinner text-[#8B5E3C]"></span>
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+          <div>
+            <div className="h-8 bg-base-300 rounded w-32 animate-pulse"></div>
+            <div className="h-4 bg-base-300 rounded w-64 mt-2 animate-pulse"></div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="h-10 bg-base-300 rounded-xl w-full sm:w-72 animate-pulse"></div>
+            <div className="h-10 bg-base-300 rounded-xl w-full sm:w-52 animate-pulse"></div>
+          </div>
+        </div>
+        <BooksGridSkeleton count={6} />
       </div>
     );
   }
@@ -159,9 +171,9 @@ export default function AllBooks() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="mt-10 text-base-content/60"
+            className="mt-10 text-center py-12 bg-base-200 rounded-2xl text-base-content/60"
           >
-            No books found.
+            {query ? `No results found for "${query}"` : "No books found."}
           </Motion.p>
         ) : (
           <Motion.div
@@ -203,7 +215,7 @@ export default function AllBooks() {
                 </div>
 
                 <div className="p-4">
-                  <h3 className="font-bold text-lg">{book.name}</h3>
+                  <h3 className="font-bold text-lg line-clamp-1">{book.name}</h3>
                   <p className="text-sm font-semibold text-base-content/60">{book.author}</p>
 
                   <div className="mt-2 flex items-center justify-between">
@@ -222,6 +234,17 @@ export default function AllBooks() {
           </Motion.div>
         )}
       </AnimatePresence>
+
+      {/* Results count */}
+      {filteredBooks.length > 0 && (
+        <Motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-8 text-center text-sm text-base-content/50"
+        >
+          Showing {filteredBooks.length} book{filteredBooks.length !== 1 ? "s" : ""}
+        </Motion.p>
+      )}
     </div>
   );
 }

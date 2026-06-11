@@ -6,6 +6,7 @@ import axiosSecure from "../hooks/useAxiosSecure";
 import { AuthContext } from "../contexts/AuthContext";
 import { motion as Motion } from "framer-motion";
 import { CheckCircle2, XCircle, Heart } from "lucide-react";
+import { BookDetailSkeleton } from "../components/ui/Skeleton";
 
 // ---------- Toast ----------
 const showToast = {
@@ -97,7 +98,6 @@ export default function BookDetails() {
       } catch (error) {
         const status = error?.response?.status;
 
-        // if final attempt, decide what to show
         if (i === retries - 1) {
           if (status === 404) {
             setBook(null);
@@ -113,7 +113,6 @@ export default function BookDetails() {
         await new Promise((resolve) => setTimeout(resolve, 700));
       }
     }
-
     return false;
   }, [id]);
 
@@ -121,11 +120,9 @@ export default function BookDetails() {
   const fetchReviews = useCallback(async () => {
     try {
       setReviewLoading(true);
-
       const res = await axios.get(
         `${import.meta.env.VITE_API_URL}/reviews?bookId=${id}`
       );
-
       setReviews(res.data || []);
     } catch (error) {
       console.log("Failed to load reviews:", error);
@@ -239,19 +236,27 @@ export default function BookDetails() {
     }
   };
 
-  // ---------- Loading ----------
+  // ---------- Loading Skeleton ----------
   if (loading) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <span className="loading loading-spinner text-[#8B5E3C]"></span>
-      </div>
-    );
+    return <BookDetailSkeleton />;
   }
 
   if (bookNotFound || !book) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-[#8B5E3C]">Book not found</h2>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 py-20">
+        <div className="text-center">
+          <div className="w-24 h-24 mx-auto mb-4 bg-base-200 rounded-full flex items-center justify-center">
+            <span className="text-4xl">📚</span>
+          </div>
+          <h2 className="text-2xl font-bold text-[#8B5E3C]">Book not found</h2>
+          <p className="mt-2 text-base-content/60">The book you're looking for doesn't exist or has been removed.</p>
+          <button
+            onClick={() => navigate("/books")}
+            className="mt-6 btn bg-[#8B5E3C] text-white hover:bg-[#A47148] border-0"
+          >
+            Browse All Books
+          </button>
+        </div>
       </div>
     );
   }
@@ -297,7 +302,7 @@ export default function BookDetails() {
               <Motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate(`/books/${book._id}/buy`)}
-                className="bg-[#8B5E3C] text-white py-2 rounded-lg hover:bg-[#A47148]"
+                className="bg-[#8B5E3C] text-white py-2 rounded-lg hover:bg-[#A47148] transition-all"
               >
                 Buy Now
               </Motion.button>
@@ -306,7 +311,7 @@ export default function BookDetails() {
                 whileTap={{ scale: 0.95 }}
                 onClick={handleAddWishlist}
                 disabled={wishLoading}
-                className="border border-[#8B5E3C] text-[#8B5E3C] py-2 rounded-lg hover:bg-[#8B5E3C] hover:text-white flex items-center justify-center gap-2"
+                className="border border-[#8B5E3C] text-[#8B5E3C] py-2 rounded-lg hover:bg-[#8B5E3C] hover:text-white flex items-center justify-center gap-2 transition-all"
               >
                 <Heart size={16} />
                 {wishLoading ? "Adding..." : "Wishlist"}
@@ -325,21 +330,31 @@ export default function BookDetails() {
         <h2 className="text-xl font-bold text-[#8B5E3C] mb-4">Write a Review</h2>
 
         {!user ? (
-          <p>Please login to review</p>
+          <div className="text-center py-6">
+            <p className="text-base-content/60">Please login to review this book</p>
+            <button
+              onClick={() => navigate("/login")}
+              className="mt-3 btn btn-sm bg-[#8B5E3C] text-white hover:bg-[#A47148] border-0"
+            >
+              Login to Review
+            </button>
+          </div>
         ) : !eligible ? (
-          <p>{eligibleReason}</p>
+          <div className="text-center py-6">
+            <p className="text-base-content/60">{eligibleReason}</p>
+          </div>
         ) : (
           <form onSubmit={submitReview} className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {[1, 2, 3, 4, 5].map((i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => setRating(i)}
-                  className={`px-3 py-2 rounded-lg border ${
+                  className={`px-4 py-2 rounded-lg border transition-all ${
                     rating === i
-                      ? "bg-[#8B5E3C] text-white"
-                      : "border-[#8B5E3C] text-[#8B5E3C]"
+                      ? "bg-[#8B5E3C] text-white border-[#8B5E3C]"
+                      : "border-[#8B5E3C] text-[#8B5E3C] hover:bg-[#8B5E3C]/10"
                   }`}
                 >
                   {i} ★
@@ -351,62 +366,84 @@ export default function BookDetails() {
               rows="4"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#8B5E3C]"
+              className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-[#8B5E3C] bg-base-100"
               placeholder="Write your review..."
               required
             />
 
-            <button className="bg-[#8B5E3C] text-white px-6 py-2 rounded-lg hover:bg-[#A47148]">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="bg-[#8B5E3C] text-white px-6 py-2 rounded-lg hover:bg-[#A47148] transition-all disabled:opacity-50"
+            >
               {submitting ? "Submitting..." : "Submit Review"}
             </button>
           </form>
         )}
       </Motion.div>
 
-      {/* REVIEWS */}
+      {/* REVIEWS SECTION */}
       <div className="bg-base-200 p-6 rounded-3xl shadow-lg">
         <h2 className="text-xl font-bold text-[#8B5E3C] mb-4">Reviews</h2>
 
         {reviewLoading ? (
-          <span className="loading loading-spinner text-[#8B5E3C]"></span>
+          <div className="flex justify-center py-8">
+            <span className="loading loading-spinner text-[#8B5E3C]"></span>
+          </div>
         ) : reviews.length === 0 ? (
-          <p>No reviews yet.</p>
+          <div className="text-center py-8">
+            <p className="text-base-content/60">No reviews yet. Be the first to review!</p>
+          </div>
         ) : (
           <div className="space-y-4">
-            {reviews.map((r) => (
+            {reviews.map((r, idx) => (
               <Motion.div
                 key={r._id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-base-100 p-4 rounded-xl border"
+                transition={{ delay: idx * 0.05 }}
+                className="bg-base-100 p-4 rounded-xl border border-base-200"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-3">
                     <img
                       src={r.userPhoto || "https://i.ibb.co/2kRZpF0/user.png"}
                       alt={r.userName || "User"}
-                      className="w-10 h-10 rounded-full"
+                      className="w-10 h-10 rounded-full object-cover"
                     />
-
                     <div>
-                      <p className="font-semibold">{r.userName}</p>
+                      <p className="font-semibold">{r.userName || "Anonymous"}</p>
                       <p className="text-xs text-gray-500">
-                        {new Date(r.createdAt).toLocaleString()}
+                        {new Date(r.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
-
-                  <div className="text-yellow-500 font-semibold">
-                    {"★".repeat(r.rating)}
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <span
+                        key={i}
+                        className={i < r.rating ? "text-yellow-500" : "text-gray-300"}
+                      >
+                        ★
+                      </span>
+                    ))}
                   </div>
                 </div>
-
                 <p className="mt-3 text-gray-700">{r.comment}</p>
               </Motion.div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Toast animation styles */}
+      <style>{`
+        @keyframes toastbar { from { transform: translateX(-100%); } to { transform: translateX(0%); } }
+        .animate-enter { animation: enter 200ms ease-out; }
+        .animate-leave { animation: leave 160ms ease-in forwards; }
+        @keyframes enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes leave { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(6px) scale(.98); } }
+      `}</style>
     </div>
   );
 }

@@ -1,8 +1,5 @@
 BookOrbit — Online Book Delivery Platform
 
-Live Website
-
-https://your-live-site-url.com
 
 Project Overview
 
@@ -100,5 +97,13 @@ NPM Packages Used
     n. firebase
     p. imgbb
 
+
+Admin
+Email: shakhawat.hossin.jisan@gmail.com
+password: Shakhawat2004
+
+Client repo Github Link: https://github.com/shakhawat71/bookorbit-client
+Server repo Github LinK: https://github.com/shakhawat71/bookorbit-server
+Live Link: https://bookorbit-388cb.web.app/
 
 Devoloped By: Shakhawat Hossin

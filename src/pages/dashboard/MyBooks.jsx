@@ -15,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { BooksGridSkeleton, TableSkeleton, LoadingSpinner } from "../../components/ui/Skeleton";
 
 // ----------toast----------
 const showToast = {
@@ -98,7 +99,6 @@ export default function MyBooks() {
       setLoading(true);
       const res = await axiosSecure.get("/books/mine");
       setBooks(res.data || []);
-      // showToast.success("Updated", "Your books list has been refreshed.");
     } catch (error) {
       console.log(error);
       showToast.error("Failed to load books", "Please try again.");
@@ -120,10 +120,25 @@ export default function MyBooks() {
     });
   }, [books, q]);
 
+  // Show skeleton while loading
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <span className="loading loading-spinner text-[#8B5E3C]"></span>
+      <div className="bg-base-200 p-4 sm:p-6 rounded-2xl shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
+          <div>
+            <div className="h-8 bg-base-300 rounded w-32 animate-pulse"></div>
+            <div className="h-4 bg-base-300 rounded w-48 mt-2 animate-pulse"></div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-3 sm:mt-0">
+            <div className="h-10 bg-base-300 rounded-xl w-48 animate-pulse"></div>
+            <div className="h-10 bg-base-300 rounded-xl w-24 animate-pulse"></div>
+          </div>
+        </div>
+        {view === "table" ? (
+          <TableSkeleton rows={5} columns={5} />
+        ) : (
+          <BooksGridSkeleton count={6} />
+        )}
       </div>
     );
   }
@@ -206,18 +221,31 @@ export default function MyBooks() {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-base-100 rounded-2xl p-6 text-base-content/60"
+          className="bg-base-100 rounded-2xl p-6 text-base-content/60 text-center"
         >
           {q ? (
             <p>
               No results for <span className="font-semibold">“{q}”</span>.
             </p>
           ) : (
-            <p>No books added yet.</p>
+            <div>
+              <p>No books added yet.</p>
+              <Link
+                to="/dashboard/add-book"
+                className="btn btn-sm bg-[#8B5E3C] text-white hover:bg-[#A47148] border-0 mt-3"
+              >
+                Add Your First Book
+              </Link>
+            </div>
           )}
         </motion.div>
       ) : (
         <>
+          {/* Results count */}
+          <div className="mb-3 text-sm text-base-content/50">
+            Showing {filtered.length} book{filtered.length !== 1 ? "s" : ""}
+          </div>
+
           {/* ================== TABLE (desktop) ================== */}
           {view === "table" && (
             <div className="hidden lg:block overflow-x-auto">
@@ -234,13 +262,13 @@ export default function MyBooks() {
 
                 <tbody>
                   <AnimatePresence>
-                    {filtered.map((book) => (
+                    {filtered.map((book, idx) => (
                       <motion.tr
                         key={book._id}
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 6 }}
-                        transition={{ duration: 0.22 }}
+                        transition={{ duration: 0.22, delay: idx * 0.02 }}
                         className="hover"
                       >
                         <td>
@@ -261,13 +289,10 @@ export default function MyBooks() {
                             </div>
                           </div>
                         </td>
-
                         <td className="text-sm">{book.author}</td>
-
                         <td className="font-semibold text-[#8B5E3C]">
                           ৳ {book.price ?? 0}
                         </td>
-
                         <td>
                           <span
                             className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
@@ -284,7 +309,6 @@ export default function MyBooks() {
                             {book.status}
                           </span>
                         </td>
-
                         <td className="text-right">
                           <Link
                             to={`/dashboard/edit-book/${book._id}`}
@@ -306,14 +330,14 @@ export default function MyBooks() {
           {view === "grid" && (
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
               <AnimatePresence>
-                {filtered.map((b) => (
+                {filtered.map((b, idx) => (
                   <motion.div
                     key={b._id}
                     layout
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.25 }}
+                    transition={{ duration: 0.25, delay: idx * 0.02 }}
                     whileHover={{ y: -3 }}
                     className="bg-base-100 rounded-2xl shadow-sm hover:shadow-xl transition overflow-hidden"
                   >
@@ -371,14 +395,14 @@ export default function MyBooks() {
           {view === "table" && (
             <div className="lg:hidden space-y-3">
               <AnimatePresence>
-                {filtered.map((b) => (
+                {filtered.map((b, idx) => (
                   <motion.div
                     key={b._id}
                     layout
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.25 }}
+                    transition={{ duration: 0.25, delay: idx * 0.02 }}
                     className="bg-base-100 rounded-2xl p-4 shadow-sm border border-base-200"
                   >
                     <div className="flex gap-3">

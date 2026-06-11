@@ -114,7 +114,7 @@ export default function Home() {
   return (
     <div className="bg-base-100">
       <HeroSlider sliderBooks={sliderBooks} loading={loading} />
-      <LatestBooks books={books} />
+      <LatestBooks books={books} loading={loading} />
       <Coverage />
       <Features />
       <Services />

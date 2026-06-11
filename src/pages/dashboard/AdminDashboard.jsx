@@ -39,6 +39,10 @@ import {
   Area,
 } from "recharts";
 import { Link } from "react-router-dom";
+import { DashboardStatsSkeleton, ChartSkeleton, TableSkeleton } from "../../components/ui/Skeleton";
+
+// Chart colors
+const COLORS = ["#8B5E3C", "#A47148", "#C49A6C", "#E0B88A", "#F5D5B3"];
 
 // ---------- Toast ----------
 const showToast = {
@@ -91,9 +95,6 @@ const showToast = {
       { duration: 3000 }
     ),
 };
-
-// Chart colors
-const COLORS = ["#8B5E3C", "#A47148", "#C49A6C", "#E0B88A", "#F5D5B3"];
 
 // ---------- Confirm Modal ----------
 function ConfirmModal({ open, title, description, confirmText, onConfirm, onClose, loading }) {
@@ -158,6 +159,7 @@ function OverviewCard({ title, value, icon, trend, trendValue, color }) {
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     totalBooks: 0,
     totalUsers: 0,
@@ -169,44 +171,38 @@ export default function AdminDashboard() {
     completedOrders: 0,
   });
   
-  // Chart data
   const [monthlyOrders, setMonthlyOrders] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [revenueTrend, setRevenueTrend] = useState([]);
-  
-  // Table data for recent orders
   const [recentOrders, setRecentOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
   
-  // Filtering & Sorting
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortField, setSortField] = useState("orderDate");
   const [sortDirection, setSortDirection] = useState("desc");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   
-  // Delete modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingOrder, setDeletingOrder] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Fetch dashboard stats
   const fetchStats = async () => {
     try {
       const res = await axiosSecure.get("/admin/dashboard/stats");
       setStats(res.data);
+      return res.data;
     } catch (err) {
       console.error("Failed to fetch stats:", err);
       showToast.error("Failed to load stats", "Please refresh the page.");
+      return null;
     }
   };
 
-  // Fetch monthly orders for chart
   const fetchMonthlyOrders = async () => {
     try {
       const res = await axiosSecure.get("/admin/dashboard/monthly-orders");
@@ -222,7 +218,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Fetch category distribution for pie chart
   const fetchCategoryData = async () => {
     try {
       const res = await axiosSecure.get("/admin/dashboard/category-distribution");
@@ -233,7 +228,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Fetch revenue trend for line chart
   const fetchRevenueTrend = async () => {
     try {
       const res = await axiosSecure.get("/admin/dashboard/revenue-trend");
@@ -249,7 +243,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Fetch recent orders with pagination, filtering, sorting
   const fetchRecentOrders = async () => {
     try {
       setOrdersLoading(true);
@@ -273,7 +266,22 @@ export default function AdminDashboard() {
     }
   };
 
-  // Load all data
+  const forceRefreshAll = async () => {
+    setRefreshing(true);
+    showToast.success("Refreshing", "Updating dashboard data...");
+    
+    await Promise.all([
+      fetchStats(),
+      fetchMonthlyOrders(),
+      fetchCategoryData(),
+      fetchRevenueTrend(),
+      fetchRecentOrders()
+    ]);
+    
+    setRefreshing(false);
+    showToast.success("Refreshed", "All dashboard data has been updated.");
+  };
+
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
@@ -288,33 +296,41 @@ export default function AdminDashboard() {
     loadAllData();
   }, []);
 
-  // Load orders when dependencies change
   useEffect(() => {
     if (!loading) {
       fetchRecentOrders();
     }
   }, [currentPage, statusFilter, sortField, sortDirection, searchQuery, loading]);
 
-  // Handle delete order
   const handleDeleteOrder = async () => {
     if (!deletingOrder) return;
     try {
       setDeleting(true);
       await axiosSecure.delete(`/admin/orders/${deletingOrder._id}`);
       showToast.success("Order deleted", "The order has been removed.");
-      fetchRecentOrders();
-      fetchStats();
+      
+      setDeleteModalOpen(false);
+      setDeletingOrder(null);
+      
+      setTimeout(async () => {
+        await Promise.all([
+          fetchStats(),
+          fetchMonthlyOrders(),
+          fetchCategoryData(),
+          fetchRevenueTrend(),
+          fetchRecentOrders()
+        ]);
+        showToast.success("Stats Updated", "Dashboard statistics have been refreshed.");
+      }, 500);
+      
     } catch (err) {
       console.error("Delete failed:", err);
       showToast.error("Delete failed", err?.response?.data?.message || "Please try again.");
     } finally {
       setDeleting(false);
-      setDeleteModalOpen(false);
-      setDeletingOrder(null);
     }
   };
 
-  // Handle sort
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -325,22 +341,38 @@ export default function AdminDashboard() {
     setCurrentPage(1);
   };
 
-  // Pagination
   const totalPages = Math.ceil(totalOrdersCount / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
   const endIndex = Math.min(currentPage * itemsPerPage, totalOrdersCount);
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <span className="loading loading-spinner text-[#8B5E3C]"></span>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="h-8 bg-base-300 rounded w-48 animate-pulse"></div>
+            <div className="h-4 bg-base-300 rounded w-64 mt-2 animate-pulse"></div>
+          </div>
+          <div className="h-10 bg-base-300 rounded w-28 animate-pulse"></div>
+        </div>
+        <DashboardStatsSkeleton />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 bg-base-300 rounded-2xl animate-pulse"></div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ChartSkeleton />
+          <ChartSkeleton />
+        </div>
+        <ChartSkeleton />
+        <TableSkeleton rows={5} columns={7} />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         open={deleteModalOpen}
         title="Delete Order"
@@ -348,13 +380,14 @@ export default function AdminDashboard() {
         confirmText="Yes, Delete"
         onConfirm={handleDeleteOrder}
         onClose={() => {
-          setDeleteModalOpen(false);
-          setDeletingOrder(null);
+          if (!deleting) {
+            setDeleteModalOpen(false);
+            setDeletingOrder(null);
+          }
         }}
         loading={deleting}
       />
 
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -367,21 +400,15 @@ export default function AdminDashboard() {
           </p>
         </div>
         <button
-          onClick={() => {
-            fetchStats();
-            fetchMonthlyOrders();
-            fetchCategoryData();
-            fetchRevenueTrend();
-            fetchRecentOrders();
-          }}
+          onClick={forceRefreshAll}
+          disabled={refreshing}
           className="btn btn-sm bg-[#8B5E3C] text-white hover:bg-[#A47148] border-0"
         >
-          <RefreshCw size={16} className="mr-2" />
-          Refresh All
+          <RefreshCw size={16} className={`mr-2 ${refreshing ? "animate-spin" : ""}`} />
+          {refreshing ? "Refreshing..." : "Refresh All"}
         </button>
       </motion.div>
 
-      {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <OverviewCard
           title="Total Books"
@@ -425,7 +452,6 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* Stats Row - Published/Unpublished/Pending */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-base-100 rounded-2xl p-4 border border-base-200">
           <p className="text-sm text-base-content/60">Published Books</p>
@@ -441,9 +467,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart - Monthly Orders */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -456,43 +480,33 @@ export default function AdminDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis />
-              <Tooltip
-                contentStyle={{ backgroundColor: "white", borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-              />
+              <Tooltip />
               <Legend />
               <Bar dataKey="orders" fill="#8B5E3C" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
 
-        {/* Line Chart - Revenue Trend with Real Data */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="bg-base-100 rounded-2xl p-5 shadow-md border border-base-200"
         >
-          <h3 className="font-bold text-lg text-[#8B5E3C] mb-4">Revenue Trend (Real Sales Data)</h3>
+          <h3 className="font-bold text-lg text-[#8B5E3C] mb-4">Revenue Trend</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={revenueTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tickFormatter={(value) => `৳${value}`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "white", borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-                formatter={(value) => [`৳ ${value?.toLocaleString()}`, "Revenue"]}
-              />
+              <YAxis />
+              <Tooltip formatter={(value) => [`৳ ${value?.toLocaleString()}`, "Revenue"]} />
               <Legend />
               <Line type="monotone" dataKey="revenue" stroke="#A47148" strokeWidth={3} dot={{ fill: "#8B5E3C", r: 6 }} />
               <Area type="monotone" dataKey="revenue" fill="#8B5E3C" fillOpacity={0.1} stroke="none" />
             </LineChart>
           </ResponsiveContainer>
-          <p className="text-xs text-center text-base-content/50 mt-2">
-            Total Revenue: ৳ {(revenueTrend.reduce((sum, item) => sum + (item.revenue || 0), 0)).toLocaleString()}
-          </p>
         </motion.div>
 
-        {/* Pie Chart - Category Distribution */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -536,7 +550,6 @@ export default function AdminDashboard() {
         </motion.div>
       </div>
 
-      {/* Data Table Section */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -577,19 +590,11 @@ export default function AdminDashboard() {
                 <option value="delivered">Delivered</option>
                 <option value="cancelled">Cancelled</option>
               </select>
-              <button
-                onClick={() => setMobileFiltersOpen(true)}
-                className="sm:hidden btn btn-sm btn-outline"
-              >
-                <Filter size={16} className="mr-2" />
-                Filters
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Desktop Table */}
-        <div className="hidden lg:block overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#8B5E3C] text-white">
               <tr>
@@ -615,14 +620,14 @@ export default function AdminDashboard() {
                 <tr>
                   <td colSpan="7" className="text-center py-8">
                     <span className="loading loading-spinner text-[#8B5E3C]"></span>
-                   </td>
-                 </tr>
+                  </td>
+                </tr>
               ) : recentOrders.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="text-center py-8 text-base-content/60">
                     No orders found
-                   </td>
-                 </tr>
+                  </td>
+                </tr>
               ) : (
                 recentOrders.map((order, idx) => (
                   <motion.tr
@@ -634,10 +639,8 @@ export default function AdminDashboard() {
                   >
                     <td className="px-4 py-3 text-sm font-mono">#{order._id?.slice(-8)}</td>
                     <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-sm">{order.customerName || "—"}</p>
-                        <p className="text-xs text-base-content/50">{order.userEmail || order.buyerEmail || ""}</p>
-                      </div>
+                      <p className="font-medium text-sm">{order.customerName || "—"}</p>
+                      <p className="text-xs text-base-content/50">{order.userEmail || order.buyerEmail || ""}</p>
                     </td>
                     <td className="px-4 py-3 text-sm">{order.bookName?.slice(0, 30)}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-[#8B5E3C]">৳ {order.price || order.amount}</td>
@@ -652,15 +655,8 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm">{new Date(order.orderDate).toLocaleDateString()}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <Link
-                          to={`/dashboard/orders/${order._id}/view`}
-                          className="btn btn-xs btn-ghost text-blue-600"
-                          title="View"
-                        >
-                          <Eye size={14} />
-                        </Link>
                         <button
                           onClick={() => {
                             setDeletingOrder(order);
@@ -680,53 +676,6 @@ export default function AdminDashboard() {
           </table>
         </div>
 
-        {/* Mobile Cards */}
-        <div className="lg:hidden space-y-3 p-4">
-          {ordersLoading ? (
-            <div className="flex justify-center py-8">
-              <span className="loading loading-spinner text-[#8B5E3C]"></span>
-            </div>
-          ) : recentOrders.length === 0 ? (
-            <p className="text-center py-8 text-base-content/60">No orders found</p>
-          ) : (
-            recentOrders.map((order) => (
-              <motion.div
-                key={order._id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-base-200 rounded-2xl p-4"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs text-base-content/50">Order #{order._id?.slice(-8)}</p>
-                    <p className="font-bold">{order.bookName?.slice(0, 30)}</p>
-                    <p className="text-sm">{order.customerName || "—"}</p>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    order.status === "delivered" ? "bg-green-100 text-green-700" :
-                    order.status === "shipped" ? "bg-blue-100 text-blue-700" :
-                    order.status === "cancelled" ? "bg-red-100 text-red-700" :
-                    "bg-yellow-100 text-yellow-700"
-                  }`}>
-                    {order.status || "pending"}
-                  </span>
-                </div>
-                <div className="mt-3 flex justify-between items-center">
-                  <p className="font-semibold text-[#8B5E3C]">৳ {order.price || order.amount}</p>
-                  <div className="flex gap-2">
-                    <Link to={`/dashboard/orders/${order._id}/view`} className="btn btn-xs btn-ghost">View</Link>
-                    <button onClick={() => {
-                      setDeletingOrder(order);
-                      setDeleteModalOpen(true);
-                    }} className="btn btn-xs btn-ghost text-red-600">Delete</button>
-                  </div>
-                </div>
-              </motion.div>
-            ))
-          )}
-        </div>
-
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="px-5 py-4 border-t border-base-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <p className="text-sm text-base-content/60">
@@ -773,7 +722,6 @@ export default function AdminDashboard() {
         )}
       </motion.div>
 
-      {/* Toast animations */}
       <style>{`
         @keyframes toastbar { from { transform: translateX(-100%); } to { transform: translateX(0%); } }
         .animate-enter { animation: enter 200ms ease-out; }

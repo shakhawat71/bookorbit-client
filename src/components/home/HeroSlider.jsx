@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { HeroSliderSkeleton } from "../ui/Skeleton";
 
 const truncate = (text = "", max = 120) => {
   const t = String(text || "").replace(/\s+/g, " ").trim();
@@ -74,10 +75,22 @@ export default function HeroSlider({ sliderBooks, loading }) {
     { icon: <Zap size={16} />, text: "Fast checkout & tracking" },
   ];
 
+  // Show skeleton while loading
   if (loading) {
+    return <HeroSliderSkeleton />;
+  }
+
+  // Show empty state if no books
+  if (!sliderBooks?.length) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <span className="loading loading-spinner text-[#8B5E3C]"></span>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="w-24 h-24 mx-auto mb-4 bg-base-200 rounded-full flex items-center justify-center">
+            <span className="text-4xl">📚</span>
+          </div>
+          <h2 className="text-2xl font-bold text-[#8B5E3C]">No books available</h2>
+          <p className="mt-2 text-base-content/60">Check back later for new arrivals!</p>
+        </div>
       </div>
     );
   }
@@ -191,103 +204,95 @@ export default function HeroSlider({ sliderBooks, loading }) {
             onMouseLeave={() => (pauseRef.current = false)}
           >
             <div className="relative bg-base-200 rounded-3xl shadow-xl overflow-hidden">
-              {sliderBooks?.length ? (
-                <>
-                  <div className="relative h-90 sm:h-107.5">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={sliderBooks[active]?._id || active}
-                        initial={{ opacity: 0, scale: 1.03 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.99 }}
-                        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute inset-0"
-                      >
-                        <motion.img
-                          src={sliderBooks[active]?.image}
-                          alt={sliderBooks[active]?.name}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          animate={prefersReducedMotion ? {} : { scale: [1, 1.06, 1] }}
-                          transition={
-                            prefersReducedMotion
-                              ? {}
-                              : { duration: 6, repeat: Infinity, ease: "easeInOut" }
-                          }
-                        />
+              <div className="relative h-90 sm:h-107.5">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={sliderBooks[active]?._id || active}
+                    initial={{ opacity: 0, scale: 1.03 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.99 }}
+                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute inset-0"
+                  >
+                    <motion.img
+                      src={sliderBooks[active]?.image}
+                      alt={sliderBooks[active]?.name}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      animate={prefersReducedMotion ? {} : { scale: [1, 1.06, 1] }}
+                      transition={
+                        prefersReducedMotion
+                          ? {}
+                          : { duration: 6, repeat: Infinity, ease: "easeInOut" }
+                      }
+                    />
 
-                        <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/25 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/25 to-transparent" />
 
-                        <motion.div
-                          initial={{ opacity: 0, y: 14 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.5, delay: 0.1 }}
-                          className="absolute bottom-0 left-0 right-0 p-6"
+                    <motion.div
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.1 }}
+                      className="absolute bottom-0 left-0 right-0 p-6"
+                    >
+                      <h3 className="text-white text-2xl font-bold line-clamp-1">
+                        {sliderBooks[active]?.name}
+                      </h3>
+                      <p className="mt-2 text-white/85 text-sm max-w-xl line-clamp-2">
+                        {truncate(sliderBooks[active]?.description, 100)}
+                      </p>
+
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <Link
+                          to="/books"
+                          className="btn btn-sm bg-white text-[#8B5E3C] hover:bg-base-200 border-0"
                         >
-                          <h3 className="text-white text-2xl font-bold">
-                            {sliderBooks[active]?.name}
-                          </h3>
-                          <p className="mt-2 text-white/85 text-sm max-w-xl">
-                            {truncate(sliderBooks[active]?.description, 120)}
-                          </p>
+                          Explore All Books
+                          <ArrowRight size={16} className="ml-1" />
+                        </Link>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
 
-                          <div className="mt-4 flex flex-wrap items-center gap-3">
-                            <Link
-                              to="/books"
-                              className="btn btn-sm bg-white text-[#8B5E3C] hover:bg-base-200 border-0"
-                            >
-                              Explore All Books
-                              <ArrowRight size={16} className="ml-1" />
-                            </Link>
-                          </div>
-                        </motion.div>
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
+              <div className="absolute top-4 right-4 flex items-center gap-2">
+                <motion.button
+                  type="button"
+                  onClick={goPrev}
+                  whileTap={{ scale: 0.94 }}
+                  whileHover={{ scale: 1.04 }}
+                  className="btn btn-sm btn-circle bg-black/40 text-white border-0 hover:bg-black/60"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft size={18} />
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={goNext}
+                  whileTap={{ scale: 0.94 }}
+                  whileHover={{ scale: 1.04 }}
+                  className="btn btn-sm btn-circle bg-black/40 text-white border-0 hover:bg-black/60"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight size={18} />
+                </motion.button>
+              </div>
 
-                  <div className="absolute top-4 right-4 flex items-center gap-2">
-                    <motion.button
-                      type="button"
-                      onClick={goPrev}
-                      whileTap={{ scale: 0.94 }}
-                      whileHover={{ scale: 1.04 }}
-                      className="btn btn-sm btn-circle bg-black/40 text-white border-0 hover:bg-black/60"
-                      aria-label="Previous slide"
-                    >
-                      <ChevronLeft size={18} />
-                    </motion.button>
-                    <motion.button
-                      type="button"
-                      onClick={goNext}
-                      whileTap={{ scale: 0.94 }}
-                      whileHover={{ scale: 1.04 }}
-                      className="btn btn-sm btn-circle bg-black/40 text-white border-0 hover:bg-black/60"
-                      aria-label="Next slide"
-                    >
-                      <ChevronRight size={18} />
-                    </motion.button>
-                  </div>
-
-                  <div className="absolute bottom-4 right-4 flex gap-2">
-                    {sliderBooks.slice(0, SLIDE_COUNT).map((_, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setActive(i)}
-                        className={[
-                          "h-2.5 rounded-full transition-all duration-300",
-                          i === active ? "w-8 bg-white" : "w-2.5 bg-white/50",
-                        ].join(" ")}
-                        aria-label={`Go to slide ${i + 1}`}
-                      />
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="h-90 sm:h-105 flex items-center justify-center">
-                  <p className="text-base-content/60">No published books yet.</p>
-                </div>
-              )}
+              <div className="absolute bottom-4 right-4 flex gap-2">
+                {sliderBooks.slice(0, SLIDE_COUNT).map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActive(i)}
+                    className={[
+                      "h-2.5 rounded-full transition-all duration-300",
+                      i === active ? "w-8 bg-white" : "w-2.5 bg-white/50",
+                    ].join(" ")}
+                    aria-label={`Go to slide ${i + 1}`}
+                  />
+                ))}
+              </div>
             </div>
           </motion.div>
         </div>
