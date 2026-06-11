@@ -189,6 +189,16 @@ function SidebarContent({ role, isOpen, closeMobile, linkClass, toggleIsOpen }) 
                 isOpen={isOpen}
               />
             </li>
+            <li>
+              <MenuLink
+                to="/dashboard/admin"
+                icon={<LayoutDashboard size={18} className="text-white" />}
+                label="Admin Dashboard"
+                linkClass={linkClass}
+                closeMobile={closeMobile}
+                isOpen={isOpen}
+              />
+            </li>
           </>
         )}
       </ul>

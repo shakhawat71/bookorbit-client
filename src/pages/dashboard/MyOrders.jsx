@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useEffect, useMemo, useState } from "react";
 import axiosSecure from "../../hooks/useAxiosSecure";
 import { motion, AnimatePresence } from "framer-motion";

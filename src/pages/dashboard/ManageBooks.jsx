@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-// ✅ src/pages/dashboard/ManageBooks.jsx (SaaS-style Admin Panel - Responsive + Animated + Gorgeous Toast + Modal Confirm + Filters)
 import { useEffect, useMemo, useState } from "react";
 import axiosSecure from "../../hooks/useAxiosSecure";
 import { motion, AnimatePresence } from "framer-motion";

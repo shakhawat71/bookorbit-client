@@ -1,9 +1,4 @@
-/* eslint-disable no-unused-vars */
-// ✅ src/pages/dashboard/AllUsers.jsx (SaaS-style Admin Panel - Responsive + Animated + Modal Confirm + Gorgeous Toast)
-// Requirements:
-// - Tailwind + DaisyUI installed (you already use them)
-// - framer-motion installed
-// - react-hot-toast <Toaster/> mounted once in App.jsx or RootLayout
+
 
 import { useEffect, useMemo, useState } from "react";
 import axiosSecure from "../../hooks/useAxiosSecure";

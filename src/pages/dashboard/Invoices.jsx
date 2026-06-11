@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-// ✅ src/pages/dashboard/Invoices.jsx (RESPONSIVE + DATE FILTER + ANIMATIONS + GORGEOUS TOAST)
 import { useEffect, useMemo, useState } from "react";
 import axiosSecure from "../../hooks/useAxiosSecure";
 import { motion, AnimatePresence } from "framer-motion";

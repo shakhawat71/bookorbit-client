@@ -26,6 +26,7 @@ import AllUsers from "../pages/dashboard/AllUsers";
 import ManageBooks from "../pages/dashboard/ManageBooks";
 import Payment from "../pages/dashboard/Payment";
 import Orders from "../pages/dashboard/Orders";
+import AdminDashboard from "../pages/dashboard/AdminDashboard";
 
 const router = createBrowserRouter([
   {
@@ -120,6 +121,10 @@ const router = createBrowserRouter([
                 <ManageBooks />
               </RoleProtectedRoute>
             ),
+          },
+          {
+            path: "admin",
+            element: <AdminDashboard />,
           },
         ],
       },

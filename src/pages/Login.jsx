@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useContext, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
